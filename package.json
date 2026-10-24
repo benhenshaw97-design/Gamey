@@ -1,0 +1,21 @@
+{
+  "name": "the-hungering-dark",
+  "version": "1.0.0",
+  "description": "A cult horror card game. No build step: open index.html.",
+  "scripts": {
+    "copy-three": "node scripts/copy-three.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benhenshaw97-design/Gamey.git"
+  },
+  "bugs": {
+    "url": "https://github.com/benhenshaw97-design/Gamey/issues"
+  },
+  "homepage": "https://github.com/benhenshaw97-design/Gamey#readme",
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "private": true,
+  "type": "module"
+}
