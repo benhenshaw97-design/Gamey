@@ -17,6 +17,7 @@
     --violet: #8d6bd1;
     --ember: #e07a2c;
     --bone: #e9e1c4;
+    --glow: #ffcf7a;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -31,12 +32,13 @@
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
   }
+  button { font-family: inherit; touch-action: manipulation; }
   .wrap {
     max-width: 520px;
     margin: 0 auto;
     padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
   }
-  header { text-align: center; margin-bottom: 6px; }
+  header { text-align: center; margin-bottom: 6px; position: relative; }
   h1 {
     font-size: 1.5rem;
     margin: 4px 0 0;
@@ -47,13 +49,19 @@
   }
   .form-name { font-size: 1.05rem; color: var(--bone); margin-top: 4px; }
   .stage-name { font-size: .8rem; color: var(--dim); letter-spacing: .2em; text-transform: uppercase; }
+  #btn-sound {
+    position: absolute; right: 0; top: 2px; background: none; border: 1px solid #2c2430;
+    color: var(--dim); border-radius: 8px; padding: 5px 8px; font-size: .72rem; cursor: pointer;
+  }
+  @media (max-width: 420px) { h1 { font-size: 1.25rem; padding-right: 64px; text-align: left; } }
 
-  /* ---------- Creature stage ---------- */
+  /* ---------- Shrine + creature ---------- */
   .altar {
     position: relative;
     margin: 6px auto 0;
     width: min(78vw, 300px);
     aspect-ratio: 1 / 1;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   }
   .altar::after { /* stone altar base */
     content: "";
@@ -65,13 +73,19 @@
     box-shadow: 0 0 30px rgba(0,0,0,.8);
     z-index: 0;
   }
-  #creature { position: relative; z-index: 1; width: 100%; height: 100%; cursor: pointer; }
+  #shrine { position: absolute; inset: -12% -14% 0; z-index: 0; pointer-events: none; }
+  #shrine svg { width: 100%; height: 100%; overflow: visible; }
+  #candles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  #creature { position: relative; z-index: 1; width: 100%; height: 100%; cursor: pointer; touch-action: none; }
   #creature svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  #hold-ring { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .15s; }
+  #hold-ring circle { fill: none; stroke: var(--glow); stroke-width: 1.4; stroke-dasharray: 289; stroke-dashoffset: 289; transform: rotate(-90deg); transform-origin: 50% 50%; filter: drop-shadow(0 0 3px #ffb347); }
+  .altar.holding #hold-ring { opacity: 1; }
+  .altar.holding #hold-ring circle { stroke-dashoffset: 0; transition-property: stroke-dashoffset; transition-timing-function: linear; }
   .candle {
     position: absolute; bottom: 6%; width: 8px; height: 26px;
-    background: linear-gradient(#cfc4a8, #6e6553); border-radius: 2px; z-index: 2;
+    background: linear-gradient(#cfc4a8, #6e6553); border-radius: 2px;
   }
-  .candle.l { left: 6%; } .candle.r { right: 6%; }
   .candle::before {
     content: ""; position: absolute; left: 50%; top: -14px; width: 8px; height: 14px;
     margin-left: -4px; border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
@@ -79,14 +93,18 @@
     animation: flicker 1.7s infinite alternate;
     filter: drop-shadow(0 0 6px #ff8a2a);
   }
-  .candle.r::before { animation-duration: 2.3s; }
+  .candle:nth-child(even)::before { animation-duration: 2.3s; }
+  .candle.black { background: linear-gradient(#3a3036, #120e10); }
+  .candle.green::before { background: radial-gradient(ellipse at 50% 70%, #f0ffd0, #8fe04a 50%, rgba(80,255,0,0) 75%); filter: drop-shadow(0 0 6px #7fe04a); }
   @keyframes flicker {
     0% { transform: scale(1, 1) translateX(0); opacity: .9; }
     30% { transform: scale(.9, 1.1) translateX(-1px); }
     60% { transform: scale(1.05, .9) translateX(1px); opacity: 1; }
     100% { transform: scale(.95, 1.05); opacity: .75; }
   }
-  .mood { text-align: center; font-style: italic; color: var(--dim); min-height: 1.3em; font-size: .9rem; margin: 2px 0 10px; }
+  .mote { animation: mote 7s ease-in-out infinite; }
+  @keyframes mote { 0%,100% { transform: translateY(0); opacity: .2; } 50% { transform: translateY(-14px); opacity: .8; } }
+  .mood { text-align: center; font-style: italic; color: var(--dim); min-height: 1.3em; font-size: .9rem; margin: 2px 0 8px; }
 
   /* creature animations */
   .breathe { animation: breathe 4.5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 80%; }
@@ -95,6 +113,10 @@
   @keyframes breathe { 0%,100% { transform: scale(1, 1); } 50% { transform: scale(1.04, .97); } }
   .eye { transform-box: fill-box; transform-origin: center; animation: blink 7s infinite; }
   @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+  .pupil {
+    transform: translate(calc(var(--lx, 0) * var(--r, 2) * 1px), calc(var(--ly, 0) * var(--r, 2) * 1px));
+    transition: transform .3s ease-out;
+  }
   .tent { transform-box: fill-box; transform-origin: 50% 0; animation: sway 3.4s ease-in-out infinite alternate; }
   @keyframes sway { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
   .spin { transform-box: view-box; transform-origin: 100px 112px; animation: spin 40s linear infinite; }
@@ -112,12 +134,57 @@
   @keyframes hue { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
   .twitch { animation: twitch .45s; }
   @keyframes twitch { 0%,100% { transform: none; } 25% { transform: scale(1.06, .92); } 60% { transform: scale(.96, 1.05) rotate(-2deg); } }
+  .gulp { animation: gulp .7s; }
+  @keyframes gulp { 0%,100% { transform: none; } 30% { transform: scale(.9, 1.12); } 60% { transform: scale(1.12, .9); } }
   .evolving { animation: evolve 2.2s ease-out; }
   @keyframes evolve {
     0% { filter: brightness(4) blur(3px); transform: scale(.7); }
     60% { filter: brightness(1.6); transform: scale(1.08); }
     100% { filter: none; transform: scale(1); }
   }
+  .floater {
+    position: absolute; left: 50%; top: 30%; z-index: 5; pointer-events: none;
+    font-size: .85rem; color: var(--glow); text-shadow: 0 0 6px #000; white-space: nowrap;
+    transform: translateX(-50%); animation: floatup 1.4s ease-out forwards;
+  }
+  @keyframes floatup { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -40px); } }
+
+  /* ---------- Interaction bar ---------- */
+  .interact { display: flex; gap: 8px; margin-bottom: 10px; align-items: stretch; }
+  .satchel {
+    flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 10px;
+    padding: 6px 10px; font-size: .75rem; color: var(--dim); line-height: 1.35;
+  }
+  .satchel .gems { color: #d6a35a; font-size: .95rem; letter-spacing: 2px; }
+  .ibtn {
+    position: relative; flex: 0 0 auto; min-width: 78px; background: linear-gradient(#1c1620, #120e15);
+    border: 1px solid #3a2e40; border-radius: 10px; color: var(--text); padding: 6px 10px; cursor: pointer;
+    font-size: .85rem; line-height: 1.2;
+  }
+  .ibtn small { display: block; font-size: .65rem; color: var(--dim); }
+  .ibtn:disabled { opacity: .45; cursor: default; }
+  .ibtn.ready { border-color: var(--glow); box-shadow: 0 0 12px rgba(255, 190, 90, .35); animation: readyglow 1.6s ease-in-out infinite alternate; opacity: 1; }
+  @keyframes readyglow { to { box-shadow: 0 0 20px rgba(255, 190, 90, .6); } }
+  .badge {
+    position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; border-radius: 10px;
+    background: var(--blood); color: #fff; font-size: .72rem; line-height: 20px; text-align: center;
+    box-shadow: 0 0 8px rgba(255, 50, 50, .7); display: none; animation: bob 1s ease-in-out infinite alternate;
+  }
+  .badge.show { display: block; }
+  @keyframes bob { to { transform: translateY(-3px); } }
+
+  /* ---------- Tutorial ---------- */
+  #tutorial {
+    display: none; background: linear-gradient(#1d1420, #120c14); border: 1px solid #6a4a3a;
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; box-shadow: 0 0 18px rgba(255, 170, 80, .15);
+  }
+  #tutorial.show { display: block; animation: fadein .5s; }
+  #tutorial h3 { margin: 0 0 4px; font-size: .9rem; color: var(--glow); font-weight: normal; letter-spacing: .08em; }
+  #tutorial p { margin: 0; font-size: .88rem; line-height: 1.4; }
+  #tutorial button { margin-top: 8px; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .tut-target { outline: 2px solid var(--glow); outline-offset: 3px; border-radius: 10px; animation: tutpulse 1.2s ease-in-out infinite alternate; }
+  @keyframes tutpulse { from { outline-color: rgba(255, 207, 122, .3); } to { outline-color: rgba(255, 207, 122, 1); } }
 
   /* ---------- Panels ---------- */
   .panel {
@@ -130,8 +197,9 @@
   }
   .panel h2 {
     margin: 0 0 8px; font-size: .78rem; font-weight: normal; letter-spacing: .25em;
-    text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between;
+    text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between; gap: 8px;
   }
+  .panel h2 span:last-child { letter-spacing: .08em; text-transform: none; }
   .bar-row { display: grid; grid-template-columns: 78px 1fr 34px; align-items: center; gap: 8px; margin: 5px 0; font-size: .85rem; }
   .bar { height: 10px; background: #050407; border: 1px solid #2c2430; border-radius: 6px; overflow: hidden; }
   .bar > div { height: 100%; width: 50%; transition: width .5s linear; border-radius: 6px; }
@@ -142,33 +210,50 @@
   #bar-devotion { background: linear-gradient(90deg, #3b6a2b, var(--bile)); }
   #bar-dread { background: linear-gradient(90deg, #3b2766, var(--violet)); }
   #bar-health { background: linear-gradient(90deg, #4a4040, #bfb3a0); }
-  #bar-power { background: linear-gradient(90deg, #6b2a08, var(--ember)); }
+  #bar-power { background: linear-gradient(90deg, #6b2a08, var(--ember)); transition: width .9s cubic-bezier(.2, .8, .2, 1); box-shadow: 0 0 8px rgba(224, 122, 44, .6); }
   .power-label { font-size: .75rem; color: var(--dim); text-align: center; margin-top: 2px; }
+  .power-label b { color: var(--ember); font-weight: normal; }
 
-  .cult-summary { font-size: .9rem; margin-bottom: 6px; }
-  .cultist-icons { font-size: 1.1rem; letter-spacing: 2px; color: #a59a8c; word-break: break-all; }
-  .cultist-icons .busy { opacity: .35; }
-  .task { font-size: .8rem; margin: 6px 0; }
-  .task .bar { height: 6px; margin-top: 3px; }
-  .task .bar > div { background: linear-gradient(90deg, #4b3a52, #a88bb5); transition: width .5s linear; }
-  .task-none { font-size: .8rem; color: var(--dim); font-style: italic; }
+  /* cultists */
+  #cultists { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+  .chip {
+    text-align: left; background: #0b090d; border: 1px solid #2c2430; border-radius: 8px;
+    color: var(--text); padding: 6px 8px; cursor: pointer; font-size: .8rem; line-height: 1.25; min-width: 0;
+  }
+  .chip .cname { color: var(--bone); }
+  .chip .ctrait { float: right; font-size: .65rem; color: var(--dim); letter-spacing: .05em; margin-top: 2px; }
+  .chip .loy { display: block; height: 3px; background: #1d171f; border-radius: 2px; margin: 4px 0 3px; overflow: hidden; }
+  .chip .loy i { display: block; height: 100%; background: #8aa86a; transition: width .5s; }
+  .chip.disloyal .loy i { background: #d04848; }
+  .chip.disloyal .cname::after { content: " !"; color: #ff5a5a; }
+  .chip .ctask { display: block; font-size: .68rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip .cprog { display: block; height: 4px; background: #1d171f; border-radius: 2px; margin-top: 3px; overflow: hidden; }
+  .chip .cprog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #4b3a52, #c9a8d6); transition: width .3s linear; }
+  .chip.busy { border-color: #4b3a52; }
+  .chip.idle .cprog { opacity: 0; }
+  .chip.done { animation: chipdone 1s ease-out; }
+  @keyframes chipdone { 0% { box-shadow: 0 0 0 0 rgba(255, 207, 122, .9); border-color: var(--glow); transform: scale(1.04); } 100% { box-shadow: 0 0 0 12px rgba(255, 207, 122, 0); transform: none; } }
+  .empty-cult { font-size: .8rem; color: var(--dim); font-style: italic; grid-column: 1 / -1; }
 
   .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .actions button {
-    font-family: inherit; color: var(--text); text-align: left;
+  .actions button, .shop button {
+    color: var(--text); text-align: left;
     background: linear-gradient(#1c1620, #120e15);
     border: 1px solid #3a2e40; border-radius: 9px;
-    padding: 10px 10px 9px; min-height: 64px; cursor: pointer;
+    padding: 9px 10px 8px; min-height: 60px; cursor: pointer;
     transition: transform .08s, border-color .2s;
   }
-  .actions button:active:not(:disabled) { transform: scale(.97); }
-  .actions button:hover:not(:disabled) { border-color: #7a5a86; }
-  .actions button:disabled { opacity: .38; cursor: not-allowed; }
-  .actions .name { display: block; font-size: .95rem; color: var(--bone); }
-  .actions .desc { display: block; font-size: .7rem; color: var(--dim); margin-top: 3px; line-height: 1.3; }
-  .actions .count { float: right; font-size: .7rem; color: #6d6270; }
+  .actions button:active:not(:disabled), .shop button:active:not(:disabled) { transform: scale(.97); }
+  .actions button:hover:not(:disabled), .shop button:hover:not(:disabled) { border-color: #7a5a86; }
+  .actions button:disabled, .shop button:disabled { opacity: .38; cursor: not-allowed; }
+  .actions .name, .shop .name { display: block; font-size: .92rem; color: var(--bone); }
+  .actions .desc, .shop .desc { display: block; font-size: .68rem; color: var(--dim); margin-top: 3px; line-height: 1.3; }
+  .actions .why { display: block; font-size: .65rem; color: #c86a6a; margin-top: 2px; }
+  .actions .count, .shop .cost { float: right; font-size: .7rem; color: #6d6270; }
+  .shop .cost { color: var(--ember); }
   .actions button[data-action="sacrifice"] { border-color: #5a1f24; }
-  .actions button.wide { grid-column: span 2; }
+  .shop { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .shop button.maxed { border-color: #3a4a2a; }
 
   #log { max-height: 190px; overflow-y: auto; font-size: .82rem; line-height: 1.4; }
   #log p { margin: 0 0 6px; }
@@ -178,10 +263,18 @@
   #log .good { color: #b6cf85; }
   #log .evolve { color: #ffcf7a; }
   #log .mad { color: #9fe0e0; font-style: italic; letter-spacing: .03em; }
+  #log-pin {
+    display: none; font-size: .82rem; color: var(--glow); border: 1px dashed #6a4a3a; border-radius: 7px;
+    padding: 6px 8px; margin-bottom: 8px; cursor: pointer; background: rgba(255, 190, 90, .05);
+  }
+  #log-pin.show { display: block; }
 
+  .achv { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 4px 0 10px; }
+  .achv span { font-size: .7rem; color: #4e4550; border: 1px solid #241d27; border-radius: 12px; padding: 3px 9px; }
+  .achv span.got { color: var(--glow); border-color: #6a4a3a; }
   .footer-btns { display: flex; gap: 8px; justify-content: center; margin-top: 4px; }
   .ghost {
-    font-family: inherit; background: none; color: var(--dim);
+    background: none; color: var(--dim);
     border: 1px solid #2c2430; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: .8rem;
   }
   .ghost:hover { color: var(--text); border-color: #5a4a60; }
@@ -191,7 +284,7 @@
     position: fixed; inset: 0; background: rgba(3, 2, 5, .88);
     display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px;
   }
-  .overlay.show { display: flex; }
+  .overlay.show { display: flex; animation: fadein .25s; }
   .dialog {
     max-width: 440px; width: 100%; max-height: 90vh; overflow-y: auto;
     background: #0f0c12; border: 1px solid #3a2e40; border-radius: 12px; padding: 18px 18px 16px;
@@ -201,12 +294,58 @@
   .dialog p, .dialog li { font-size: .9rem; line-height: 1.45; }
   .dialog ul { padding-left: 18px; }
   .dialog .primary {
-    font-family: inherit; display: block; width: 100%; margin-top: 12px;
+    display: block; width: 100%; margin-top: 12px;
     background: linear-gradient(#4a141a, #2a0a0e); color: var(--bone);
     border: 1px solid #7a2a32; border-radius: 9px; padding: 12px; font-size: 1rem; cursor: pointer;
   }
+  .dialog .primary:disabled { opacity: .4; cursor: default; }
+  .dialog .secondary { display: block; width: 100%; margin-top: 8px; }
+  .choice {
+    display: block; width: 100%; text-align: left; margin-top: 8px; cursor: pointer;
+    background: linear-gradient(#1c1620, #120e15); color: var(--text);
+    border: 1px solid #3a2e40; border-radius: 9px; padding: 10px 12px; font-size: .95rem;
+  }
+  .choice:hover:not(:disabled) { border-color: #9a6a5a; }
+  .choice:disabled { opacity: .4; cursor: not-allowed; }
+  .choice small { display: block; color: var(--dim); font-size: .72rem; margin-top: 3px; }
+  .choice small em { color: #c9a37a; font-style: normal; }
+  .result-text { font-style: italic; color: #d8c0a8; }
+  .stat-row { display: flex; justify-content: space-between; gap: 10px; font-size: .88rem; padding: 4px 0; border-bottom: 1px solid #1f1922; }
+  .stat-row span:first-child { color: var(--dim); }
+  .stat-row span:last-child { text-align: right; }
+
+  /* ritual */
+  .rune-circle { position: relative; width: min(72vw, 280px); aspect-ratio: 1; margin: 10px auto 4px; }
+  .rune-circle::before {
+    content: ""; position: absolute; inset: 14%; border-radius: 50%;
+    border: 1px solid rgba(255, 207, 122, .2); box-shadow: inset 0 0 40px rgba(179, 38, 46, .25);
+  }
+  .rune {
+    position: absolute; width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border-radius: 50%;
+    background: radial-gradient(circle, #1a1218, #0a070b); border: 1px solid #4a3a40; color: #6e5d62;
+    font-size: clamp(1.2rem, 6vw, 1.7rem); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .rune.lit { color: #fff3d0; border-color: var(--glow); background: radial-gradient(circle, #8a4a1a, #2a0e06); box-shadow: 0 0 22px rgba(255, 190, 90, .9); transform: scale(1.12); }
+  .rune.wrong { color: #fff; border-color: #ff3a3a; background: radial-gradient(circle, #8a1a1a, #2a0606); box-shadow: 0 0 22px rgba(255, 50, 50, .9); }
+  .rune:disabled { cursor: default; }
+  #ritual-status { text-align: center; min-height: 1.4em; color: var(--glow); }
+  .ritual-dots { text-align: center; letter-spacing: 6px; color: #4a3a40; min-height: 1.2em; }
+  .ritual-dots .on { color: var(--glow); }
+
+  #toast {
+    position: fixed; left: 50%; top: 12px; z-index: 60; transform: translate(-50%, -160%);
+    background: linear-gradient(#2a1a10, #140a06); border: 1px solid #b07a3a; border-radius: 10px;
+    padding: 10px 16px; min-width: 240px; max-width: 90vw; text-align: center;
+    box-shadow: 0 0 30px rgba(255, 170, 80, .35); transition: transform .45s cubic-bezier(.2, 1.4, .4, 1);
+  }
+  #toast.show { transform: translate(-50%, 0); }
+  #toast .tt { font-size: .65rem; letter-spacing: .25em; color: var(--glow); text-transform: uppercase; }
+  #toast .tn { font-size: 1.05rem; color: var(--bone); margin: 2px 0; }
+  #toast .td { font-size: .78rem; color: var(--dim); }
+
   .flash { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle, rgba(255,220,160,.6), transparent 70%); opacity: 0; z-index: 40; }
   .flash.go { animation: flashgo 1.6s ease-out; }
+  .flash.red { background: radial-gradient(circle, rgba(255,40,40,.45), transparent 70%); }
   @keyframes flashgo { 0% { opacity: 1; } 100% { opacity: 0; } }
 
   @media (prefers-reduced-motion: reduce) {
@@ -217,17 +356,30 @@
 <body>
 <div class="wrap">
   <header>
+    <button id="btn-sound" aria-label="Toggle sound">Sound: on</button>
     <h1>The Hungering Dark</h1>
     <div class="form-name" id="form-name">Spawn</div>
     <div class="stage-name" id="stage-name">Stage I &middot; Spawn</div>
   </header>
 
-  <div class="altar">
-    <div class="candle l"></div>
-    <div id="creature" aria-label="Your horror. Tap to touch it." role="img"></div>
-    <div class="candle r"></div>
+  <div class="altar" id="altar">
+    <div id="shrine"></div>
+    <div id="creature" aria-label="Your horror. Tap to stroke it, hold to feed it." role="img"></div>
+    <div id="candles"></div>
+    <svg id="hold-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg>
   </div>
   <div class="mood" id="mood"></div>
+
+  <div class="interact">
+    <div class="satchel">
+      <div>Offerings <span class="gems" id="gems"></span></div>
+      <div id="satchel-hint">Tap to stroke · Hold to feed</div>
+    </div>
+    <button class="ibtn" id="btn-ritual">Ritual<small id="ritual-sub">—</small></button>
+    <button class="ibtn" id="btn-omen">Omen<small id="omen-sub">quiet</small><span class="badge" id="omen-badge">1</span></button>
+  </div>
+
+  <div id="tutorial"><h3 id="tut-title"></h3><p id="tut-text"></p><button class="ghost" id="tut-btn" style="display:none">Continue</button></div>
 
   <section class="panel">
     <h2><span>The Horror</span><span id="age"></span></h2>
@@ -235,14 +387,13 @@
     <div class="bar-row" id="row-devotion"><span class="lbl">Devotion</span><div class="bar"><div id="bar-devotion"></div></div><span class="val" id="val-devotion"></span></div>
     <div class="bar-row" id="row-dread"><span class="lbl">Dread</span><div class="bar"><div id="bar-dread"></div></div><span class="val" id="val-dread"></span></div>
     <div class="bar-row" id="row-health"><span class="lbl">Vitality</span><div class="bar"><div id="bar-health"></div></div><span class="val" id="val-health"></span></div>
-    <div class="bar-row" id="row-power" style="margin-top:9px"><span class="lbl">Power</span><div class="bar"><div id="bar-power"></div></div><span class="val" id="val-power"></span></div>
+    <div class="bar-row" id="row-power" style="margin-top:9px"><span class="lbl">Growth</span><div class="bar"><div id="bar-power"></div></div><span class="val" id="val-power"></span></div>
     <div class="power-label" id="power-label"></div>
   </section>
 
   <section class="panel">
     <h2><span>The Cult</span><span id="cult-count"></span></h2>
-    <div class="cultist-icons" id="cultist-icons"></div>
-    <div id="tasks"></div>
+    <div id="cultists"></div>
   </section>
 
   <section class="panel">
@@ -251,10 +402,17 @@
   </section>
 
   <section class="panel">
+    <h2><span>Dark Works</span><span id="shop-power"></span></h2>
+    <div class="shop" id="shop"></div>
+  </section>
+
+  <section class="panel">
     <h2><span>Chronicle</span></h2>
+    <div id="log-pin">An omen awaits your judgement. The chronicle holds its breath... (tap)</div>
     <div id="log" aria-live="polite"></div>
   </section>
 
+  <div class="achv" id="achv"></div>
   <div class="footer-btns">
     <button class="ghost" id="btn-help">How to play</button>
     <button class="ghost" id="btn-reset">Reset cult</button>
@@ -262,6 +420,7 @@
 </div>
 
 <div class="flash" id="flash"></div>
+<div id="toast"><div class="tt">Achievement</div><div class="tn" id="toast-name"></div><div class="td" id="toast-desc"></div></div>
 
 <div class="overlay" id="intro">
   <div class="dialog">
@@ -269,13 +428,13 @@
     <p>Beneath the old chapel, something has hatched. It is small, wet and hungry, and it has chosen <em>you</em>.</p>
     <p><strong>Your goal:</strong> raise it from a mewling Spawn into an <strong>Elder Horror</strong>.</p>
     <ul>
-      <li>It has three needs that slowly drain in real time: <strong>Hunger</strong>, <strong>Devotion</strong> and <strong>Dread</strong>. Keep them above zero.</li>
-      <li>Send your cultists to perform rites. Each rite takes a little while, then pays off. A cultist on a rite is busy until it ends.</li>
-      <li>Gather <strong>Power</strong> and the horror grows. What it becomes depends on which rites you favour.</li>
-      <li>If a need stays empty, the horror weakens, cultists flee, and it may die.</li>
-      <li>Progress saves automatically. Time keeps passing while you are away, but it won't kill your horror outright.</li>
+      <li>Keep its <strong>Hunger</strong>, <strong>Devotion</strong> and <strong>Dread</strong> above zero. They drain slowly in real time.</li>
+      <li>Command cultists to perform short rites. Each cultist has a trait and a <strong>loyalty</strong>. Disloyal ones steal and flee. Preach a <strong>Sermon</strong> to keep them in line.</li>
+      <li><strong>Tap</strong> the horror to stroke it. <strong>Hold</strong> to feed it an offering.</li>
+      <li>Answer <strong>Omens</strong> when they appear, and perform <strong>Rituals</strong> by repeating the rune sequence.</li>
+      <li>Rites earn <strong>Power</strong>. All Power you earn makes the horror grow; spend it in the <strong>Dark Works</strong> for upgrades. What it becomes depends on the rites and choices you favour.</li>
+      <li>If a need stays empty, the horror weakens and may die. Progress saves automatically, and time away can't kill it outright.</li>
     </ul>
-    <p style="color:var(--dim);font-size:.8rem">Tip: tap the horror. It likes being noticed.</p>
     <button class="primary" id="btn-start">Descend</button>
   </div>
 </div>
@@ -288,16 +447,45 @@
   </div>
 </div>
 
+<div class="overlay" id="event-ov">
+  <div class="dialog">
+    <h2 id="ev-title"></h2>
+    <p id="ev-text"></p>
+    <div id="ev-choices"></div>
+    <button class="ghost secondary" id="ev-later">Decide later</button>
+  </div>
+</div>
+
+<div class="overlay" id="ritual-ov">
+  <div class="dialog">
+    <h2>The Ritual</h2>
+    <p style="margin:0">The runes will glow in sequence. Watch closely, then touch them in the same order. Success floods the horror with Power; failure wounds it.</p>
+    <div class="rune-circle" id="rune-circle"></div>
+    <div class="ritual-dots" id="ritual-dots"></div>
+    <div id="ritual-status"></div>
+    <button class="primary" id="ritual-go">Begin the Ritual</button>
+    <button class="ghost secondary" id="ritual-close">Not now</button>
+  </div>
+</div>
+
+<div class="overlay" id="cultist-ov">
+  <div class="dialog">
+    <h2 id="cu-name"></h2>
+    <div id="cu-body"></div>
+    <button class="primary" id="cu-close">Close</button>
+  </div>
+</div>
+
 <script>
 /* =====================================================================
    GAME CONFIG: edit everything here to balance the game.
-   Times are in seconds unless noted. Needs and vitality run 0 to 100.
+   Times are in seconds unless noted. Needs, vitality and loyalty run 0 to 100.
    ===================================================================== */
 const CONFIG = {
   // Multiplies game time. 1 = real time. Add ?speed=20 to the URL to test fast.
   timeScale: 1,
 
-  saveKey: 'hungering-dark-save-v1',
+  saveKey: 'hungering-dark-save-v1',   // kept the same so old saves load (and are upgraded)
 
   start: {
     cultists: 3,
@@ -305,6 +493,8 @@ const CONFIG = {
     health: 100,
     power: 0,
     madness: 0,
+    offerings: 2,
+    loyalty: [60, 85],         // starting cultists get a random loyalty in this range
   },
 
   // How much each need falls per MINUTE.
@@ -325,6 +515,7 @@ const CONFIG = {
   offline: {
     maxSeconds: 8 * 3600,      // time away counted at most this much
     minHealth: 20,             // vitality never drops below this from an absence
+    minLoyalty: 30,            // loyalty never decays below this from an absence
     maxCultistsLost: 1,        // at most this many cultists flee while you are away
     stepSeconds: 60,           // simulation step size for the catch-up
   },
@@ -335,63 +526,109 @@ const CONFIG = {
   // Madness is hidden. It slowly fades, warps the horror's look, and triggers visions.
   madness: {
     decayPerMinute: 0.3,
-    visionsAbove: 40,          // above this, horror events may be visions with real effects
+    visionsAbove: 40,
     eyesPer: 12,               // one extra stray eye per this much madness
-    jitterAbove: 50,           // the horror starts glitching
-    hueShiftAbove: 75,         // colours start to crawl
+    jitterAbove: 50,
+    hueShiftAbove: 75,
   },
 
-  // The rites. effects: hunger, devotion, dread, power, madness, cultists, health.
+  // ---------- Direct interaction ----------
+  stroke: { cooldown: 10, effects: { devotion: 3 } },
+  feed: {
+    holdMs: 600,               // how long to hold the horror to feed it
+    effects: { hunger: 12, power: 2 },
+    baseCap: 3,                // offering satchel size before upgrades
+    regenSeconds: 90,          // a new offering appears this often (if there is room)
+  },
+
+  // ---------- Cultists ----------
+  cultists: {
+    baseCap: 6,                // max cultists before upgrades
+    loyaltyDecayPerMinute: 0.6,
+    neglectDecayMult: 2,       // loyalty falls this much faster while any need is empty
+    loyaltyPerRite: 2,         // a cultist gains this when they finish a rite
+    sacrificeWitness: -4,      // loyalty change for everyone who watches a sacrifice
+    recruitLoyalty: [45, 70],
+    rebelBelow: 25,            // cultists under this loyalty may rebel
+    rebelCheckSeconds: 40,
+    rebelChance: 0.3,          // per disloyal cultist per check
+    stealPower: [6, 15],       // a rebel steals this much spendable Power...
+    stealChance: 0.55,         // ...with this chance, otherwise they flee
+  },
+
+  // Traits: actionMult scales a rite's positive effects, speedMult scales its duration,
+  // loseMult scales the chance of not coming back, loyaltyOn overrides loyaltyPerRite.
+  traits: {
+    Zealot:  { desc: 'Fanatically devoted. Excellent at Chanting and Sermons. Loyalty fades slowly, and sacrifices thrill them.',
+               actionMult: { chant: 1.6, sermon: 1.5, hall: 1.3 }, loyaltyDecay: 0.5, sacrificeWitness: 3 },
+    Coward:  { desc: 'Quick and quiet, but flighty. Does every rite faster, hates terrorising, and loses faith quickly.',
+               speedMult: 0.7, loyaltyDecay: 1.5, loseMult: { terrorise: 1.5 }, loyaltyOn: { terrorise: -6 } },
+    Scholar: { desc: 'Hungry for forbidden knowledge. Much better at Study and digging.',
+               actionMult: { study: 1.6, tunnels: 1.4 } },
+    Brute:   { desc: 'Big, violent and unsubtle. Terrorises brilliantly and rarely gets caught.',
+               actionMult: { terrorise: 1.6 }, loseMult: { terrorise: 0.4 } },
+  },
+
+  // The rites. effects: hunger, devotion, dread, power, madness, cultists, health, offerings, loyaltyAll.
   // costsCultist: the cultist is consumed when the rite ends.
   // loseChance: chance the cultist does not come back.
-  // minCultists: you must have at least this many cultists not already marked for sacrifice.
+  // requires: the Dark Works upgrade that unlocks this rite.
   actions: {
-    sacrifice: {
-      label: 'Sacrifice', duration: 20, costsCultist: true, minCultists: 2,
-      desc: 'Feeds Hunger, lots of Power. Costs a cultist.',
-      effects: { hunger: 30, power: 15, devotion: 4 },
-    },
-    chant: {
-      label: 'Chant', duration: 25,
-      desc: 'Raises Devotion and a little Power. Safe.',
-      effects: { devotion: 18, power: 2 },
-    },
-    recruit: {
-      label: 'Recruit', duration: 40,
-      desc: 'Gains a cultist. Slightly lowers Dread.',
-      effects: { cultists: 1, dread: -5 },
-    },
-    terrorise: {
-      label: 'Terrorise Villagers', duration: 30, loseChance: 0.2,
-      desc: 'Raises Dread. The cultist may not return.',
-      effects: { dread: 22, power: 4 },
-    },
-    study: {
-      label: 'Forbidden Study', duration: 35, wide: true,
-      desc: 'Some Power. Raises something you cannot see...',
-      effects: { madness: 10, power: 3, devotion: -2 },
-    },
+    sacrifice: { label: 'Sacrifice', duration: 7, costsCultist: true, minCultists: 2,
+                 desc: 'Feeds Hunger, lots of Power. The least loyal cultist goes on the altar.',
+                 effects: { hunger: 25, power: 10, devotion: 3 } },
+    chant:     { label: 'Chant', duration: 8,
+                 desc: 'Raises Devotion and a little Power. Safe.',
+                 effects: { devotion: 8, power: 1 } },
+    recruit:   { label: 'Recruit', duration: 12,
+                 desc: 'Gains a cultist. Slightly lowers Dread.',
+                 effects: { cultists: 1, dread: -4 } },
+    terrorise: { label: 'Terrorise Villagers', duration: 10, loseChance: 0.15, offeringChance: 0.35,
+                 desc: 'Raises Dread, may bring back an offering. Risky.',
+                 effects: { dread: 12, power: 2 } },
+    study:     { label: 'Forbidden Study', duration: 12,
+                 desc: 'Some Power. Raises something you cannot see...',
+                 effects: { madness: 8, power: 2, devotion: -1 } },
+    sermon:    { label: 'Sermon', duration: 10,
+                 desc: 'Raises every cultist\'s loyalty.',
+                 effects: { loyaltyAll: 15, devotion: 2 } },
+    tunnels:   { label: 'Dig Tunnels', duration: 15, requires: 'tunnels', relicChance: 0.15,
+                 desc: 'Unearths offerings and old bones. Sometimes a relic.',
+                 effects: { offerings: 1, power: 3 }, relicEffects: { madness: 6, power: 8 } },
+    hall:      { label: 'Mass in the Cult Hall', duration: 20, requires: 'hall',
+                 desc: 'A great gathering. Devotion and loyalty for all.',
+                 effects: { devotion: 12, loyaltyAll: 8, power: 4 } },
   },
 
-  // Power needed to reach each stage (index = stage).
+  // ---------- Dark Works (upgrade shop, paid with spendable Power) ----------
+  upgrades: {
+    swift:   { label: 'Swift Rites',      desc: 'All rites take 15% less time.',            costs: [40, 110, 240], speed: 0.15 },
+    crypt:   { label: 'Deeper Crypt',     desc: '+3 cultist slots.',                         costs: [50, 130, 280], cultistCap: 3 },
+    satchel: { label: 'Offering Satchel', desc: '+2 offering capacity, offerings return 25% faster.', costs: [30, 90], offeringCap: 2, regenMult: 0.75 },
+    tunnels: { label: 'Dig Tunnels',      desc: 'Unlocks the Dig Tunnels rite.',            costs: [60] },
+    hall:    { label: 'Summon Cult Hall', desc: 'Unlocks the Mass in the Cult Hall rite.',  costs: [150] },
+  },
+
+  // Total Power ever gathered needed to reach each stage (index = stage).
+  // Spending Power in the Dark Works never undoes growth.
   stages: [
     { name: 'Spawn',        power: 0 },
-    { name: 'Larva',        power: 30 },
-    { name: 'Abomination',  power: 150 },
-    { name: 'Elder Horror', power: 400 },
+    { name: 'Larva',        power: 40 },
+    { name: 'Abomination',  power: 250 },
+    { name: 'Elder Horror', power: 800 },
   ],
 
-  // How the evolution path is chosen: rites performed since the last evolution, weighted.
-  // The highest scoring path wins. Recruit counts towards the devout path.
+  // How the evolution path is chosen: rites performed (and omen choices) since the
+  // last evolution, weighted. The highest scoring path wins.
   evolution: {
     weights: {
       sacrifice: { sacrifice: 1.5 },
-      study:     { study: 1 },
+      study:     { study: 1, tunnels: 0.4 },
       terrorise: { terrorise: 1 },
-      devout:    { chant: 1, recruit: 0.6 },
+      devout:    { chant: 1, recruit: 0.6, sermon: 0.5, hall: 1 },
     },
     defaultPath: 'devout',
-    tieBreakMadness: 50,       // ties go to the study path if madness is at least this
+    tieBreakMadness: 50,
   },
 
   // Each path changes how fast needs drain (multipliers), from Larva onwards.
@@ -401,8 +638,9 @@ const CONFIG = {
     terrorise: { dread: 1.3, hunger: 0.9 },
     devout:    { devotion: 0.8, dread: 1.1 },
   },
+  // Shown on omen choices so the player knows which form a choice feeds.
+  pathNames: { sacrifice: 'the Maw', study: 'the Eye', terrorise: 'the Thorn', chant: 'the Hymn', recruit: 'the Hymn' },
 
-  // Forms: one per path for each stage after Spawn.
   forms: {
     0: { spawn: { name: 'The Spawn', desc: 'A trembling knot of wet flesh with one enormous eye.' } },
     1: {
@@ -425,7 +663,6 @@ const CONFIG = {
     },
   },
 
-  // Colours for each path (body gradient light/dark, accent glow).
   palettes: {
     spawn:     { light: '#4a5a40', dark: '#0e140c', accent: '#b5d36b' },
     sacrifice: { light: '#7a1c22', dark: '#250507', accent: '#ff4a4a' },
@@ -434,9 +671,111 @@ const CONFIG = {
     devout:    { light: '#2d5440', dark: '#07140e', accent: '#e6f0a8' },
   },
 
-  // Horror flavour events.
+  // ---------- Ritual mini-game ----------
+  ritual: {
+    intervalSeconds: 150,      // a new Ritual becomes available this long after the last one
+    firstAfterTutorial: 45,
+    length: [4, 4, 5, 6],      // runes in the sequence, by stage
+    showMs: 650,               // how long each rune glows while showing the sequence
+    gapMs: 220,
+    reward: [20, 35, 60, 90],  // Power on success, by stage
+    successEffects: { devotion: 10 },
+    failEffects: { health: -12 },
+    glyphs: ['Ψ', 'Ω', 'Δ', '☽', '✶', 'Ϟ'],
+  },
+
+  // ---------- Choice events (Omens) ----------
+  choiceEvents: { minSeconds: 60, maxSeconds: 90, firstAfterTutorial: 30, noRepeat: 5 },
+
+  // Flavour events from the horror itself.
   events: { minSeconds: 60, maxSeconds: 150 },
-  pokeCooldownSeconds: 4,
+
+  // ---------- Tutorial (first minute) ----------
+  tutorial: [
+    { title: 'I. The Hatching', text: 'Your three faithful kneel before the Spawn. It is weak and it needs their voices. Command a cultist to Chant.', target: 'chant' },
+    { title: 'II. The Touch',   text: 'The Spawn mewls and rolls its eye toward you. Tap it to stroke its wet hide.', target: 'creature' },
+    { title: 'III. The Offering', text: 'Its belly growls. Press and hold the Spawn to feed it an offering from your satchel.', target: 'creature' },
+  ],
+  tutorialEnd: { title: 'It begins', text: 'It is sated, for now. Keep it fed, worshipped and feared. Omens and Rituals will come to you. Spend Power in the Dark Works to grow your cult.' },
+
+  achievements: {
+    firstBlood:    { name: 'First Blood',    desc: 'Perform your first sacrifice.' },
+    riteMaster:    { name: 'Rite Master',    desc: 'Complete a Ritual without a single mistake.' },
+    metamorphosis: { name: 'Metamorphosis',  desc: 'Raise your horror into an Abomination.' },
+  },
+
+  // Omens: every 60-90s one of these asks the player to choose. Option fields:
+  //   effects (as rites, plus push: {rite: n} to nudge evolution, sacrificeOne, sacrificeTarget,
+  //   loyaltyTarget, recruitTrait), requires {cultists, power, space, offerings},
+  //   risk {chance, effects, result}.
+  // {n} = a random cultist's name, {d} = the least loyal cultist's name.
+  omens: [
+    { id: 'traveller', title: 'A Stranger at the Fire', text: 'A traveller stumbles into the camp, frostbitten and babbling about lights in the marsh.', options: [
+      { label: 'Sacrifice him', effects: { hunger: 18, power: 6, push: { sacrifice: 2 } }, result: 'His screams are short. The horror\'s feeding is long.' },
+      { label: 'Recruit him', requires: { space: 1 }, effects: { cultists: 1, push: { recruit: 2 } }, result: 'He kneels, eyes shining. He has nowhere else to go.' },
+      { label: 'Let him go', effects: { dread: 10, push: { terrorise: 1 } }, result: 'He flees into the night and tells everyone what he saw.' },
+    ] },
+    { id: 'tome', title: 'The Drowned Book', text: 'A book bound in grey skin washes up on the riverbank. Its pages are perfectly dry.', options: [
+      { label: 'Read it aloud', effects: { madness: 15, power: 8, push: { study: 2 } }, result: 'The words crawl off the page and into {n}\'s mouth.' },
+      { label: 'Burn it before the altar', effects: { devotion: 12, push: { chant: 2 } }, result: 'It burns with a green flame, and the cult sings until dawn.' },
+    ] },
+    { id: 'priest', title: 'The Village Priest', text: 'Father Aldous preaches against your cult from the pulpit every Sunday. The villagers are listening.', options: [
+      { label: 'Desecrate his church', effects: { dread: 18, power: 4, push: { terrorise: 2 } }, risk: { chance: 0.3, effects: { cultists: -1 }, result: 'The bell-ringer caught {n}. They will not be coming back.' }, result: 'By dawn the altar is smeared with things the village won\'t name.' },
+      { label: 'Convert him (10 Power)', requires: { power: 10, space: 1 }, effects: { power: -10, cultists: 1, recruitTrait: 'Zealot', push: { chant: 2 } }, result: 'Father Aldous now preaches for you, with terrible conviction.' },
+    ] },
+    { id: 'rats', title: 'A Plague of Rats', text: 'Rats pour out of the crypt walls in their thousands. They seem to be fleeing something deeper down.', options: [
+      { label: 'Feed them to the horror', effects: { hunger: 12, push: { sacrifice: 1 } }, result: 'It slurps them up like noodles. The crunching goes on for an hour.' },
+      { label: 'Study their patterns', effects: { madness: 10, power: 4, push: { study: 2 } }, result: 'Their scurrying spells out a word. {n} writes it down and cannot stop.' },
+      { label: 'Drive them into the village', effects: { dread: 14, push: { terrorise: 2 } }, result: 'The village wakes to a carpet of rats. Nobody sleeps after that.' },
+    ] },
+    { id: 'dream', title: 'A Dream of Stars', text: '{n} wakes screaming. They say the stars spoke to them, and the stars were hungry.', options: [
+      { label: 'Encourage the visions', effects: { madness: 10, loyaltyAll: 5, power: 4, push: { study: 2 } }, result: 'The whole cult sleeps in the crypt now, sharing the dream.' },
+      { label: 'Make them chant until it passes', effects: { devotion: 12, push: { chant: 2 } }, result: 'The chanting drowns out the stars. For now.' },
+    ] },
+    { id: 'festival', title: 'Harvest Festival', text: 'The village celebrates the harvest with bonfires, dancing and far too much cider.', options: [
+      { label: 'Poison the wine', effects: { dread: 20, push: { terrorise: 2 } }, risk: { chance: 0.25, effects: { cultists: -1 }, result: '{n} was seen near the barrels and dragged away.' }, result: 'The dancing stops. The screaming starts.' },
+      { label: 'Steal the feast', effects: { offerings: 2, hunger: 5, push: { sacrifice: 1 } }, result: 'Roast pig, honey cakes, and one very surprised goose.' },
+      { label: 'Mingle and recruit', requires: { space: 1 }, effects: { cultists: 1, dread: -5, push: { recruit: 2 } }, result: 'A tipsy farmhand follows the pretty lanterns home.' },
+    ] },
+    { id: 'child', title: 'A Lost Child', text: 'A little girl has wandered into the crypt, following the candlelight. She is not afraid.', options: [
+      { label: 'Offer her to the horror', effects: { hunger: 25, power: 12, loyaltyAll: -10, push: { sacrifice: 3 } }, result: 'Even the Zealots look away.' },
+      { label: 'Send her home with a warning', effects: { dread: 12, push: { terrorise: 1 } }, result: 'She tells the village about the thing with too many teeth. They believe her.' },
+      { label: 'Let the horror whisper to her', effects: { madness: 12, devotion: 5, push: { study: 2 } }, result: 'She leaves smiling. She will be back when she is older.' },
+    ] },
+    { id: 'shedding', title: 'The Shedding', text: 'The horror sheds its skin in one wet piece. It lies on the altar, still twitching.', options: [
+      { label: 'Sew vestments from it', effects: { devotion: 10, loyaltyAll: 8, push: { chant: 2 } }, result: 'The cult wears the horror proudly. It smells terrible.' },
+      { label: 'Read the patterns in its veins', effects: { madness: 12, power: 5, push: { study: 2 } }, result: 'The veins form a map of somewhere that does not exist yet.' },
+      { label: 'Nail it to the village gate', effects: { dread: 16, push: { terrorise: 2 } }, result: 'The village stares at it in silence. Then the praying begins.' },
+    ] },
+    { id: 'hunter', title: 'The Witch-Hunter', text: 'A man in a wide-brimmed hat is asking questions at the tavern. He carries a silver knife.', options: [
+      { label: 'Ambush him', effects: { hunger: 18, power: 6, push: { sacrifice: 2 } }, risk: { chance: 0.35, effects: { cultists: -1 }, result: 'His silver knife found {n} first.' }, result: 'His hat now hangs above the altar.' },
+      { label: 'Hide and pray', effects: { devotion: 12, dread: -8, push: { chant: 2 } }, result: 'He finds nothing and leaves. The village relaxes a little.' },
+      { label: 'Leave him gifts of teeth', effects: { dread: 15, push: { terrorise: 2 } }, result: 'He leaves at midnight, without his horse.' },
+    ] },
+    { id: 'bloodmoon', title: 'Blood Moon', text: 'The moon rises red and swollen. The horror will not stop staring at it.', options: [
+      { label: 'Hold a great feast', requires: { cultists: 2 }, effects: { sacrificeOne: 1, hunger: 35, power: 15, push: { sacrifice: 3 } }, result: 'One of the faithful volunteers. Their name is sung all night.' },
+      { label: 'Gaze into the moon', effects: { madness: 15, power: 8, push: { study: 2 } }, result: 'The moon gazes back. It has an opinion about you.' },
+    ] },
+    { id: 'rival', title: 'The Rival Cult', text: 'A ragged cult in the next valley worships a "Pale Worm". They are poaching your villagers.', options: [
+      { label: 'Absorb them', requires: { space: 2 }, effects: { cultists: 2, loyaltyAll: -5, push: { recruit: 2 } }, result: 'Two converts arrive, still muttering about the Worm.' },
+      { label: 'Crush them', effects: { dread: 15, power: 10, push: { terrorise: 2 } }, risk: { chance: 0.25, effects: { cultists: -1 }, result: 'The Worm-worshippers fought back. {n} fell.' }, result: 'There is no Pale Worm cult anymore. There is barely a valley.' },
+      { label: 'Steal their scriptures', effects: { madness: 10, power: 6, push: { study: 1 } }, result: 'The Worm, it turns out, is real. And it is afraid of your horror.' },
+    ] },
+    { id: 'well', title: 'The Black Well', text: 'The village well has begun to give black water. It tastes of pennies and smoke.', options: [
+      { label: 'Drink deeply', effects: { madness: 15, health: -5, power: 6, push: { study: 2 } }, result: 'Everyone who drinks sees the same door, standing open.' },
+      { label: 'Bottle it as offerings', effects: { offerings: 2, push: { sacrifice: 1 } }, result: 'The horror loves it. It drinks it through its skin.' },
+      { label: 'Let the village keep drinking', effects: { dread: 18, push: { terrorise: 2 } }, result: 'The villagers have started sleepwalking. Toward the crypt.' },
+    ] },
+    { id: 'pilgrim', title: 'A Generous Pilgrim', text: 'A wealthy pilgrim mistakes your crypt for a holy shrine and leaves a purse of silver.', options: [
+      { label: 'Buy black candles', effects: { devotion: 15, push: { chant: 2 } }, result: 'The crypt glows with a hundred dark flames.' },
+      { label: 'Buy forbidden maps', effects: { madness: 8, power: 8, push: { study: 2 } }, result: 'The maps show the village as it will look in a hundred years. It is underwater.' },
+      { label: 'Follow her home', effects: { hunger: 15, push: { sacrifice: 2 } }, result: 'She never makes it home.' },
+    ] },
+    { id: 'doubt', title: 'A Crisis of Faith', requires: { cultists: 2 }, text: '{d} comes to you in tears. They are no longer sure the horror is a god.', options: [
+      { label: 'Preach to them', effects: { loyaltyTarget: 35, devotion: 4, push: { chant: 2 } }, result: '{d} weeps, then laughs, then kisses the altar. They are yours again.' },
+      { label: 'Make an example of them', effects: { sacrificeTarget: 1, hunger: 20, loyaltyAll: 6, push: { sacrifice: 2 } }, result: '{d} is given to the horror. Nobody else doubts aloud.' },
+    ] },
+  ],
 
   // ---------- Flavour text ----------
   text: {
@@ -452,9 +791,9 @@ const CONFIG = {
         'The old words echo off wet stone. The candles burn green.',
       ],
       recruit: [
-        '{n} returns with a hollow-eyed newcomer: {r}.',
-        'A lonely traveller, {r}, accepts the invitation to supper.',
-        '{r} joins the cult, smiling a little too widely.',
+        '{n} returns with a hollow-eyed newcomer: {r} the {t}.',
+        'A lonely traveller, {r}, accepts the invitation to supper. ({t})',
+        '{r} joins the cult, smiling a little too widely. ({t})',
       ],
       terrorise: [
         '{n} leaves strange marks on doors in the village. The villagers whisper.',
@@ -465,19 +804,35 @@ const CONFIG = {
         'The villagers caught {n}. Torches were involved.',
         '{n} did not come back from the village. Only their hood was found.',
       ],
+      terroriseOffering: '{n} also brings back a stolen lamb. An offering for the satchel.',
       study: [
         '{n} reads from a book bound in something soft. They laugh at nothing.',
         '{n} copies diagrams that hurt to look at. The horror watches.',
         '{n} learns a colour that has no name. They will not stop describing it.',
       ],
+      sermon: [
+        '{n} preaches of the coming feast. The cult hangs on every word.',
+        '{n} delivers a sermon so fierce the candles bend toward them.',
+      ],
+      tunnels: [
+        '{n} digs deeper beneath the crypt and finds old, gnawed bones.',
+        '{n} breaks into a forgotten ossuary. There is something worth offering.',
+      ],
+      tunnelsRelic: '{n} unearths a relic that hums at a pitch only the horror enjoys.',
+      hall: [
+        'The Cult Hall fills with swaying bodies. The horror basks in it.',
+        '{n} leads a mass in the Cult Hall. The hymns shake dust from the rafters.',
+      ],
     },
-    poke: [
+    stroke: [
       'It leans into your touch. It is warm in the wrong places.',
       'It makes a sound like a wet laugh.',
       'An eye rolls toward you. It knows your name now.',
-      'It shudders, and the candles gutter.',
+      'It shudders with pleasure, and the candles gutter.',
       'It tastes your fingers, gently. For now.',
     ],
+    feed: ['It swallows the offering whole.', 'It unhinges something to fit the offering in.', 'The offering vanishes. A bone is spat out later.'],
+    feedEmpty: 'Your satchel is empty. Terrorise the village or wait for more offerings.',
     hungry:    ['It gnaws at the altar stones.', 'Its belly growls like distant thunder.', 'It eyes the cultists hungrily.'],
     faithless: ['It sulks in the dark, unworshipped.', 'It turns away from the empty pews.'],
     unafraid:  ['Somewhere a child laughs without fear. The horror shrinks.', 'The villagers sleep soundly. It hates that.'],
@@ -490,17 +845,20 @@ const CONFIG = {
     },
     weak: ['It is fading. Its colour drains away.', 'It barely moves. The cult grows nervous.'],
     flee: ['{n} loses their nerve and flees into the night.', '{n} has stopped believing. They run.'],
+    rebelSteal: ['{n} pilfers {p} Power from the reliquary and sneers at you.', '{n} skims {p} Power from the offerings. Their loyalty is for sale.'],
+    rebelFlee: ['{n} spits on the altar and storms out of the crypt.', '{n} rebels openly, then vanishes into the woods.'],
     stray: '{r}, a lost soul, wanders into the crypt, drawn by the horror\'s call.',
+    omenArrives: 'An omen stirs. A choice must be made.',
+    ritualReady: 'The stars align. A Ritual can be performed.',
     madness: [
       'Everyone in the crypt hears your name spoken backwards.',
       'For a moment, every candle burns black.',
       'The walls are breathing. Nobody mentions it.',
       'You count the cultists. You count them again. The number is different.',
     ],
-    names: ['Agnes', 'Silas', 'Mercy', 'Obadiah', 'Ezra', 'Hester', 'Tobias', 'Prudence', 'Ambrose', 'Lilith', 'Josiah', 'Constance', 'Edmund', 'Winifred', 'Gideon', 'Ruth', 'Cornelius', 'Temperance', 'Barnaby', 'Delphine'],
+    names: ['Agnes', 'Silas', 'Mercy', 'Obadiah', 'Ezra', 'Hester', 'Tobias', 'Prudence', 'Ambrose', 'Lilith', 'Josiah', 'Constance', 'Edmund', 'Winifred', 'Gideon', 'Ruth', 'Cornelius', 'Temperance', 'Barnaby', 'Delphine', 'Jedediah', 'Honor', 'Thaddeus', 'Bathsheba'],
   },
 
-  // Visions: random effects when madness is high (one is picked per horror event, sometimes).
   visions: [
     { text: 'A vision of a sunken city. The horror drinks in its power.', effects: { power: 6 } },
     { text: 'The cult wakes screaming from the same dream. Devotion deepens.', effects: { devotion: 10 } },
@@ -520,9 +878,13 @@ const CONFIG = {
 
   const NEEDS = ['hunger', 'devotion', 'dread'];
   const ROMAN = ['I', 'II', 'III', 'IV'];
+  const TRAITS = Object.keys(CONFIG.traits);
+  const TUT_DONE = CONFIG.tutorial.length + 1;
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const scaled = sec => sec * 1000 / CONFIG.timeScale; // game seconds -> real ms
 
   function mulberry32(a) {
     return function () {
@@ -533,6 +895,67 @@ const CONFIG = {
     };
   }
 
+  /* ---------- Sound (Web Audio, no files) ---------- */
+  let actx = null, master = null;
+  function audio() {
+    if (!state || state.muted) return null;
+    if (!actx) {
+      try {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+        master = actx.createGain(); master.gain.value = 0.7;
+        master.connect(lp).connect(actx.destination);
+      } catch (e) { return null; }
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function tone(f, dur, o = {}) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + (o.delay || 0);
+    const osc = a.createOscillator(), g = a.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(f, t);
+    if (o.slide) osc.frequency.exponentialRampToValueAtTime(Math.max(20, f * o.slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.vol || 0.1, t + (o.attack || 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(master);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  }
+  function noise(dur, vol, freq, delay) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + (delay || 0);
+    const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq || 800;
+    const g = a.createGain(); g.gain.value = vol || 0.1;
+    src.connect(f).connect(g).connect(master); src.start(t);
+  }
+  const RUNE_NOTES = [220, 261.6, 293.7, 329.6, 392, 440];
+  const SFX = {
+    tap:      () => tone(180, .08, { type: 'triangle', vol: .06 }),
+    start:    () => tone(130, .18, { vol: .12, slide: .7 }),
+    complete: () => { tone(660, .3, { vol: .05 }); tone(990, .35, { vol: .04, delay: .07 }); },
+    stroke:   () => { for (let i = 0; i < 4; i++) tone(70 + i * 3, .12, { type: 'triangle', vol: .09, delay: i * .09 }); },
+    feed:     () => { tone(320, .3, { type: 'square', vol: .04, slide: .3 }); noise(.25, .12, 500, .1); },
+    sacrifice:() => { noise(.7, .16, 380); tone(55, .9, { type: 'sawtooth', vol: .06, slide: .5 }); },
+    omen:     () => { tone(523, 1.4, { vol: .07, attack: .005 }); tone(529, 1.4, { vol: .05, attack: .005 }); tone(784, 1, { vol: .03, delay: .02 }); },
+    rune:     i => tone(RUNE_NOTES[i % 6], .35, { type: 'triangle', vol: .1 }),
+    success:  () => [220, 261.6, 329.6, 440, 523].forEach((f, i) => tone(f, .9, { type: 'triangle', vol: .07, delay: i * .09 })),
+    fail:     () => { tone(110, .7, { type: 'sawtooth', vol: .07 }); tone(116.5, .7, { type: 'sawtooth', vol: .07 }); },
+    achieve:  () => [523, 659, 784, 1046].forEach((f, i) => tone(f, .4, { vol: .06, delay: i * .08 })),
+    evolve:   () => { tone(55, 2.2, { type: 'sawtooth', vol: .07, slide: 4, attack: .4 }); noise(1.6, .08, 1200, .3); },
+    buy:      () => { tone(440, .12, { vol: .06 }); tone(660, .2, { vol: .06, delay: .08 }); },
+    error:    () => tone(90, .15, { type: 'square', vol: .04 }),
+    bad:      () => tone(140, .5, { type: 'sawtooth', vol: .05, slide: .6 }),
+    death:    () => tone(220, 2.4, { type: 'triangle', vol: .1, slide: .2 }),
+  };
+  function sfx(name, arg) { try { SFX[name] && SFX[name](arg); } catch (e) { /* audio is optional */ } }
+
+  /* ---------- State ---------- */
   let state = null;
 
   function emptyCounts() {
@@ -540,180 +963,674 @@ const CONFIG = {
     Object.keys(CONFIG.actions).forEach(k => c[k] = 0);
     return c;
   }
+  function emptyUpgrades() {
+    const u = {};
+    Object.keys(CONFIG.upgrades).forEach(k => u[k] = 0);
+    return u;
+  }
+
+  function makeCultist(name, trait, loyaltyRange) {
+    const r = loyaltyRange || CONFIG.cultists.recruitLoyalty;
+    return {
+      id: state.nextCultistId++,
+      name: name || pick(CONFIG.text.names),
+      trait: trait || pick(TRAITS),
+      loyalty: Math.round(rand(r[0], r[1])),
+      done: 0,
+    };
+  }
 
   function newState() {
     const s = CONFIG.start;
     const now = Date.now();
-    return {
-      version: 1,
+    state = {
+      version: 2,
       seed: Math.floor(Math.random() * 1e9),
       createdAt: now,
       lastTick: now,
       needs: { ...s.needs },
       health: s.health,
-      power: s.power,
+      power: s.power,        // spendable
+      powerTotal: s.power,   // lifetime, drives growth
       madness: s.madness,
       stage: 0,
       path: 'spawn',
-      cultists: Array.from({ length: s.cultists }, () => randomName()),
+      cultists: [],
+      nextCultistId: 1,
       tasks: [],
       counts: emptyCounts(),
       stageCounts: emptyCounts(),
       zeroTime: 0,
       fleeTimer: 0,
       strayTimer: 0,
-      nextEventAt: now + 20000,
+      rebelTimer: 0,
+      nextEventAt: now + 25000,
       log: [],
       dead: false,
-      stats: { sacrificed: 0, recruited: 0, lost: 0 },
+      stats: { sacrificed: 0, recruited: 0, lost: 0, ritualsWon: 0 },
       seenIntro: false,
       taskId: 1,
+      offerings: s.offerings,
+      offeringTimer: 0,
+      lastStroke: 0,
+      ritualReadyAt: null,
+      ritualAnnounced: false,
+      nextChoiceAt: null,
+      pendingOmen: null,
+      recentOmens: [],
+      upgrades: emptyUpgrades(),
+      achievements: {},
+      tutorial: 0,
+      muted: false,
     };
+    // the first cultists all have different traits so the player sees the variety
+    const traits = TRAITS.slice().sort(() => Math.random() - .5);
+    for (let i = 0; i < s.cultists; i++) state.cultists.push(makeCultist(null, traits[i % traits.length], s.loyalty));
+    return state;
   }
 
-  function randomName() {
-    return pick(CONFIG.text.names);
-  }
-
-  /* ---------- Save / load ---------- */
+  /* ---------- Save / load (version 1 saves are upgraded) ---------- */
   function save() {
     try { localStorage.setItem(CONFIG.saveKey, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
   }
   function load() {
+    let s;
     try {
       const raw = localStorage.getItem(CONFIG.saveKey);
       if (!raw) return null;
-      const s = JSON.parse(raw);
-      if (!s || s.version !== 1) return null;
-      // fill in any counters for actions added to CONFIG later
-      Object.keys(CONFIG.actions).forEach(k => {
-        if (s.counts[k] == null) s.counts[k] = 0;
-        if (s.stageCounts[k] == null) s.stageCounts[k] = 0;
-      });
-      return s;
+      s = JSON.parse(raw);
     } catch (e) { return null; }
+    if (!s || (s.version !== 1 && s.version !== 2)) return null;
+    const fresh = newState();
+    state = null;
+    if (s.version === 1) migrateV1(s);
+    // fill in anything added since the save was written
+    for (const k in fresh) if (s[k] === undefined) s[k] = fresh[k];
+    Object.keys(CONFIG.actions).forEach(k => {
+      if (s.counts[k] == null) s.counts[k] = 0;
+      if (s.stageCounts[k] == null) s.stageCounts[k] = 0;
+    });
+    Object.keys(CONFIG.upgrades).forEach(k => { if (s.upgrades[k] == null) s.upgrades[k] = 0; });
+    if (s.stats.ritualsWon == null) s.stats.ritualsWon = 0;
+    return s;
+  }
+  function migrateV1(s) {
+    s.version = 2;
+    let id = 1;
+    s.cultists = (s.cultists || []).map(n => ({ id: id++, name: n, trait: pick(TRAITS), loyalty: Math.round(rand(55, 80)), done: 0 }));
+    s.nextCultistId = id;
+    const free = s.cultists.slice();
+    s.tasks = (s.tasks || []).map(t => {
+      const i = free.findIndex(c => c.name === t.name);
+      if (i === -1) return null;
+      const c = free.splice(i, 1)[0];
+      return { id: t.id, action: t.action, cid: c.id, startAt: t.startAt, endAt: t.endAt };
+    }).filter(Boolean);
+    s.powerTotal = Math.max(s.power || 0, CONFIG.stages[s.stage].power);
+    s.tutorial = TUT_DONE; // veterans skip the tutorial
+    const now = Date.now();
+    s.ritualReadyAt = now + scaled(CONFIG.ritual.firstAfterTutorial);
+    s.nextChoiceAt = now + scaled(CONFIG.choiceEvents.firstAfterTutorial);
   }
 
   /* ---------- Log ---------- */
   function log(text, kind) {
     state.log.unshift({ t: Date.now(), text, kind: kind || '' });
-    if (state.log.length > 40) state.log.length = 40;
+    if (state.log.length > 50) state.log.length = 50;
     renderLog();
   }
   function fill(str, vars) {
-    return str.replace(/\{(\w)\}/g, (_, k) => vars[k] != null ? vars[k] : '');
+    return str.replace(/\{(\w)\}/g, (_, k) => vars[k] != null ? vars[k] : 'someone');
+  }
+  function floater(text) {
+    const el = document.createElement('div');
+    el.className = 'floater'; el.textContent = text;
+    $('altar').appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+  }
+  function flash(red) {
+    const fl = $('flash');
+    fl.classList.remove('go', 'red'); void fl.offsetWidth;
+    if (red) fl.classList.add('red');
+    fl.classList.add('go');
   }
 
   /* ---------- Cultists ---------- */
-  function idleCount() { return state.cultists.length - state.tasks.length; }
+  const cultistById = id => state.cultists.find(c => c.id === id);
+  const taskFor = id => state.tasks.find(t => t.cid === id);
+  const idleCultists = () => state.cultists.filter(c => !taskFor(c.id));
+  const idleCount = () => idleCultists().length;
+  const cultistCap = () => CONFIG.cultists.baseCap + state.upgrades.crypt * CONFIG.upgrades.crypt.cultistCap;
+  const pendingOf = k => state.tasks.filter(t => t.action === k).length;
+  const freeSpace = () => cultistCap() - state.cultists.length - pendingOf('recruit');
 
-  function busyNames() { return state.tasks.map(t => t.name); }
-
-  function takeIdleName() {
-    const busy = busyNames().slice();
-    for (const n of state.cultists) {
-      const i = busy.indexOf(n);
-      if (i === -1) return n;
-      busy.splice(i, 1);
-    }
-    return null;
+  function removeCultist(id) {
+    state.cultists = state.cultists.filter(c => c.id !== id);
+    state.tasks = state.tasks.filter(t => t.cid !== id);
+    if (openCultistId === id) closeOverlay('cultist-ov');
   }
-
-  function removeCultistByName(name) {
-    const i = state.cultists.indexOf(name);
-    if (i !== -1) state.cultists.splice(i, 1);
-  }
-
-  // Remove a cultist, preferring an idle one; otherwise abandon their task.
+  // Remove a random cultist, preferring an idle one. Returns their name.
   function loseCultist() {
-    let name = takeIdleName();
-    if (!name) {
-      const t = state.tasks.pop();
-      if (!t) return null;
-      name = t.name;
-    }
-    removeCultistByName(name);
+    const idle = idleCultists();
+    const pool = idle.length ? idle : state.cultists;
+    if (!pool.length) return null;
+    const c = pick(pool);
+    removeCultist(c.id);
     state.stats.lost++;
-    return name;
+    return c.name;
   }
-
-  function addCultist(name) {
-    state.cultists.push(name || randomName());
+  function addCultist(name, trait) {
+    if (state.cultists.length >= cultistCap()) return null;
+    const c = makeCultist(name, trait);
+    state.cultists.push(c);
     state.strayTimer = 0;
+    return c;
+  }
+  function leastLoyal(list) {
+    return (list || state.cultists).slice().sort((a, b) => a.loyalty - b.loyalty)[0];
+  }
+  function changeLoyalty(c, v) { if (c) c.loyalty = clamp(c.loyalty + v, 0, 100); }
+
+  // Best idle cultist for a rite: trait bonus first, then loyalty.
+  // For a sacrifice, the least loyal one goes on the altar (the cult knows who doubts).
+  function pickCultistFor(k) {
+    const idle = idleCultists();
+    if (!idle.length) return null;
+    if (k === 'sacrifice') return leastLoyal(idle);
+    const score = c => {
+      const t = CONFIG.traits[c.trait];
+      const skill = ((t.actionMult && t.actionMult[k]) || 1) / ((t.loseMult && t.loseMult[k]) || 1);
+      return skill * 100 + c.loyalty;
+    };
+    return idle.slice().sort((a, b) => score(b) - score(a))[0];
   }
 
   /* ---------- Effects ---------- */
-  function isWeak() { return state.health < CONFIG.neglect.weakBelow; }
+  const isWeak = () => state.health < CONFIG.neglect.weakBelow;
+  const offeringCap = () => CONFIG.feed.baseCap + state.upgrades.satchel * CONFIG.upgrades.satchel.offeringCap;
 
-  function applyEffects(eff) {
+  function gainPower(v) {
+    const g = v * (isWeak() ? CONFIG.neglect.weakPowerMult : 1);
+    state.power += g;
+    state.powerTotal += g;
+  }
+
+  // ctx: { self: cultist doing the rite, target: cultist an omen is about }
+  function applyEffects(eff, ctx) {
+    ctx = ctx || {};
     for (const k in eff) {
       const v = eff[k];
       if (NEEDS.includes(k)) state.needs[k] = clamp(state.needs[k] + v, 0, 100);
       else if (k === 'health') state.health = clamp(state.health + v, 0, 100);
       else if (k === 'madness') state.madness = clamp(state.madness + v, 0, 100);
-      else if (k === 'power') state.power = Math.max(0, state.power + (v > 0 && isWeak() ? v * CONFIG.neglect.weakPowerMult : v));
+      else if (k === 'power') { if (v > 0) gainPower(v); else state.power = Math.max(0, state.power + v); }
+      else if (k === 'offerings') state.offerings = clamp(state.offerings + Math.round(v), 0, offeringCap());
+      else if (k === 'loyaltyAll') state.cultists.forEach(c => changeLoyalty(c, v));
+      else if (k === 'loyaltyTarget') changeLoyalty(ctx.target, v);
+      else if (k === 'push') for (const a in v) state.stageCounts[a] = (state.stageCounts[a] || 0) + v[a];
       else if (k === 'cultists') {
-        if (v > 0) for (let i = 0; i < v; i++) addCultist();
+        if (v > 0) for (let i = 0; i < v; i++) {
+          const c = addCultist(null, eff.recruitTrait);
+          if (c) { state.stats.recruited++; log(`${c.name} the ${c.trait} joins the cult.`, 'good'); }
+        }
         else for (let i = 0; i < -v; i++) loseCultist();
+      }
+      else if (k === 'sacrificeOne' || k === 'sacrificeTarget') {
+        const c = k === 'sacrificeTarget' ? ctx.target : leastLoyal();
+        if (c && cultistById(c.id)) { removeCultist(c.id); state.stats.sacrificed++; sfx('sacrifice'); }
       }
     }
   }
 
-  /* ---------- Actions ---------- */
-  function pendingSacrifices() { return state.tasks.filter(t => t.action === 'sacrifice').length; }
-
-  function canDo(key) {
-    const a = CONFIG.actions[key];
-    if (state.dead || idleCount() < 1) return false;
-    if (a.minCultists && state.cultists.length - pendingSacrifices() < a.minCultists) return false;
-    return true;
+  /* ---------- Rites ---------- */
+  function actionUnlocked(k) {
+    const r = CONFIG.actions[k].requires;
+    return !r || state.upgrades[r] > 0;
+  }
+  const speedMult = () => Math.max(0.2, 1 - state.upgrades.swift * CONFIG.upgrades.swift.speed);
+  function actionDuration(k, c) {
+    const t = c ? CONFIG.traits[c.trait] : {};
+    return CONFIG.actions[k].duration * speedMult() * (t.speedMult || 1);
   }
 
-  function startAction(key) {
-    if (!canDo(key)) return;
-    const a = CONFIG.actions[key];
-    const name = takeIdleName();
+  // Returns '' when the rite can be done, otherwise the reason it can't.
+  function whyNot(k) {
+    const a = CONFIG.actions[k];
+    if (state.dead) return 'It is dead.';
+    if (state.cultists.length === 0) return 'No cultists.';
+    if (idleCount() < 1) return 'Every cultist is busy.';
+    if (a.minCultists && state.cultists.length - pendingOf('sacrifice') < a.minCultists) return `Needs ${a.minCultists}+ cultists.`;
+    if (a.effects.cultists > 0 && freeSpace() < 1) return 'The crypt is full.';
+    return '';
+  }
+
+  function startAction(k) {
+    if (whyNot(k)) { sfx('error'); return; }
+    const c = pickCultistFor(k);
     const now = Date.now();
-    state.tasks.push({
-      id: state.taskId++, action: key, name,
-      startAt: now, endAt: now + a.duration * 1000 / CONFIG.timeScale,
-    });
-    state.counts[key]++;
-    state.stageCounts[key]++;
+    state.tasks.push({ id: state.taskId++, action: k, cid: c.id, startAt: now, endAt: now + scaled(actionDuration(k, c)) });
+    state.counts[k]++;
+    state.stageCounts[k]++;
+    sfx('start');
+    if (state.tutorial === 0 && k === CONFIG.tutorial[0].target) advanceTutorial();
     save();
     render();
   }
 
   function completeTask(t) {
     const a = CONFIG.actions[t.action];
+    const c = cultistById(t.cid);
+    if (!c) return;
     const lines = CONFIG.text.actions;
-    const vars = { n: t.name };
+    const tr = CONFIG.traits[c.trait];
+    const mult = (tr.actionMult && tr.actionMult[t.action]) || 1;
+    const eff = {};
+    for (const k in a.effects) {
+      const v = a.effects[k];
+      eff[k] = (v > 0 && k !== 'cultists' && k !== 'offerings') ? v * mult : v;
+    }
+    const vars = { n: c.name };
+    pulseChip(c.id);
+
     if (a.costsCultist) {
-      removeCultistByName(t.name);
+      removeCultist(c.id);
       state.stats.sacrificed++;
-      applyEffects(a.effects);
+      applyEffects(eff);
+      state.cultists.forEach(o => {
+        const w = CONFIG.traits[o.trait].sacrificeWitness;
+        changeLoyalty(o, w != null ? w : CONFIG.cultists.sacrificeWitness);
+      });
       log(fill(pick(lines[t.action]), vars), 'bad');
+      sfx('sacrifice');
+      checkAchievements();
       return;
     }
-    if (a.loseChance && Math.random() < a.loseChance) {
-      removeCultistByName(t.name);
+    const loseChance = (a.loseChance || 0) * ((tr.loseMult && tr.loseMult[t.action]) || 1);
+    if (loseChance && Math.random() < loseChance) {
+      removeCultist(c.id);
       state.stats.lost++;
-      applyEffects(a.effects);
+      applyEffects(eff);
       log(fill(pick(lines.terroriseLost), vars), 'bad');
+      sfx('bad');
       return;
     }
-    if (a.effects.cultists > 0) {
-      const r = randomName();
-      vars.r = r;
-      for (let i = 0; i < a.effects.cultists; i++) addCultist(i === 0 ? r : undefined);
-      state.stats.recruited++;
-      const rest = { ...a.effects }; delete rest.cultists;
+    c.done++;
+    changeLoyalty(c, (tr.loyaltyOn && tr.loyaltyOn[t.action] != null) ? tr.loyaltyOn[t.action] : CONFIG.cultists.loyaltyPerRite);
+
+    if (eff.cultists > 0) {
+      const rest = { ...eff }; delete rest.cultists;
       applyEffects(rest);
-      log(fill(pick(lines[t.action]), vars), 'good');
+      const n = addCultist();
+      if (n) {
+        state.stats.recruited++;
+        vars.r = n.name; vars.t = n.trait;
+        log(fill(pick(lines.recruit), vars), 'good');
+      } else log(`${c.name} found a willing soul, but the crypt has no room.`, '');
+      sfx('complete');
       return;
     }
-    applyEffects(a.effects);
+    applyEffects(eff);
     log(fill(pick(lines[t.action]), vars), t.action === 'study' && state.madness > 50 ? 'mad' : '');
+    if (a.offeringChance && Math.random() < a.offeringChance && state.offerings < offeringCap()) {
+      state.offerings++;
+      log(fill(lines.terroriseOffering, vars), 'good');
+    }
+    if (a.relicChance && Math.random() < a.relicChance) {
+      applyEffects(a.relicEffects);
+      log(fill(lines.tunnelsRelic, vars), 'mad');
+    }
+    sfx('complete');
+  }
+
+  /* ---------- Direct interaction ---------- */
+  function stroke() {
+    if (state.dead) return;
+    twitch('twitch');
+    const now = Date.now();
+    if (now - state.lastStroke < scaled(CONFIG.stroke.cooldown)) { floater('…'); sfx('tap'); return; }
+    state.lastStroke = now;
+    applyEffects(CONFIG.stroke.effects);
+    floater('+Devotion');
+    log(pick(CONFIG.text.stroke), 'horror');
+    sfx('stroke');
+    if (state.tutorial === 1) advanceTutorial();
+  }
+  function feed() {
+    if (state.dead) return;
+    if (state.offerings < 1) { log(CONFIG.text.feedEmpty, ''); floater('Satchel empty'); sfx('error'); return; }
+    state.offerings--;
+    applyEffects(CONFIG.feed.effects);
+    twitch('gulp');
+    floater('+Hunger');
+    log(pick(CONFIG.text.feed), 'horror');
+    sfx('feed');
+    if (state.tutorial === 2) advanceTutorial();
+    save();
+  }
+  function twitch(cls) {
+    const svg = $('creature').querySelector('svg');
+    if (!svg) return;
+    svg.classList.remove('twitch', 'gulp'); void svg.offsetWidth; svg.classList.add(cls);
+  }
+
+  // tap = stroke, hold = feed
+  let holdTimer = null, holdFired = false;
+  function holdStart(e) {
+    if (state.dead) return;
+    audio();
+    holdFired = false;
+    lookAt(e.clientX, e.clientY);
+    $('hold-ring').querySelector('circle').style.transitionDuration = CONFIG.feed.holdMs + 'ms';
+    $('altar').classList.add('holding');
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      holdFired = true;
+      $('altar').classList.remove('holding');
+      feed();
+      render();
+    }, CONFIG.feed.holdMs);
+  }
+  function holdEnd(cancel) {
+    if (holdTimer == null) return;
+    clearTimeout(holdTimer); holdTimer = null;
+    $('altar').classList.remove('holding');
+    if (!holdFired && !cancel) { stroke(); render(); }
+  }
+
+  // eyes follow the pointer
+  let lastLook = 0;
+  function lookAt(x, y) {
+    const r = $('creature').getBoundingClientRect();
+    const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height * .55);
+    const d = Math.hypot(dx, dy) || 1;
+    const k = Math.min(1, d / 120);
+    setLook(dx / d * k, dy / d * k);
+    lastLook = Date.now();
+  }
+  function setLook(lx, ly) {
+    const el = $('creature');
+    el.style.setProperty('--lx', lx.toFixed(2));
+    el.style.setProperty('--ly', ly.toFixed(2));
+  }
+
+  /* ---------- Ritual ---------- */
+  let ritual = null;
+  const ritualReady = () => state.ritualReadyAt != null && Date.now() >= state.ritualReadyAt && !state.dead;
+
+  function openRitual() {
+    if (!ritualReady()) { sfx('error'); return; }
+    audio();
+    const glyphs = CONFIG.ritual.glyphs;
+    const circle = $('rune-circle');
+    circle.innerHTML = '';
+    glyphs.forEach((g, i) => {
+      const a = i / glyphs.length * Math.PI * 2 - Math.PI / 2;
+      const b = document.createElement('button');
+      b.className = 'rune'; b.textContent = g; b.disabled = true;
+      b.style.left = (50 + Math.cos(a) * 38) + '%';
+      b.style.top = (50 + Math.sin(a) * 38) + '%';
+      b.addEventListener('click', () => runeTap(i));
+      circle.appendChild(b);
+    });
+    const len = CONFIG.ritual.length[state.stage];
+    const seq = [];
+    while (seq.length < len) {
+      const r = Math.floor(Math.random() * glyphs.length);
+      if (r !== seq[seq.length - 1]) seq.push(r);
+    }
+    ritual = { seq, pos: 0, phase: 'ready' };
+    $('ritual-status').textContent = `${len} runes. Reward: ${CONFIG.ritual.reward[state.stage]} Power.`;
+    $('ritual-dots').innerHTML = '';
+    $('ritual-go').style.display = '';
+    $('ritual-close').style.display = '';
+    $('ritual-close').textContent = 'Not now';
+    showOverlay('ritual-ov');
+  }
+  const runeEls = () => $('rune-circle').querySelectorAll('.rune');
+  function lightRune(i, ms, cls) {
+    const el = runeEls()[i];
+    if (!el) return;
+    el.classList.add(cls || 'lit');
+    setTimeout(() => el.classList.remove(cls || 'lit'), ms);
+  }
+  function renderDots() {
+    $('ritual-dots').innerHTML = ritual.seq.map((_, i) => `<span class="${i < ritual.pos ? 'on' : ''}">●</span>`).join('');
+  }
+  function beginRitual() {
+    if (!ritual || ritual.phase !== 'ready') return;
+    const r0 = ritual;
+    r0.phase = 'show';
+    $('ritual-go').style.display = 'none';
+    $('ritual-close').style.display = 'none';
+    $('ritual-status').textContent = 'Watch...';
+    renderDots();
+    const { showMs, gapMs } = CONFIG.ritual;
+    r0.seq.forEach((r, i) => {
+      setTimeout(() => { if (ritual === r0) { lightRune(r, showMs); sfx('rune', r); } }, 600 + i * (showMs + gapMs));
+    });
+    setTimeout(() => {
+      if (ritual !== r0) return;
+      r0.phase = 'input';
+      runeEls().forEach(b => b.disabled = false);
+      $('ritual-status').textContent = 'Now. Repeat the sequence.';
+    }, 600 + r0.seq.length * (showMs + gapMs));
+  }
+  function runeTap(i) {
+    if (!ritual || ritual.phase !== 'input') return;
+    if (ritual.seq[ritual.pos] === i) {
+      lightRune(i, 250);
+      sfx('rune', i);
+      ritual.pos++;
+      renderDots();
+      if (ritual.pos === ritual.seq.length) endRitual(true);
+    } else {
+      lightRune(i, 600, 'wrong');
+      endRitual(false);
+    }
+  }
+  function endRitual(won) {
+    ritual.phase = 'done';
+    runeEls().forEach(b => b.disabled = true);
+    state.ritualReadyAt = Date.now() + scaled(CONFIG.ritual.intervalSeconds);
+    state.ritualAnnounced = false;
+    if (won) {
+      const reward = CONFIG.ritual.reward[state.stage];
+      gainPower(reward);
+      applyEffects(CONFIG.ritual.successEffects);
+      state.stats.ritualsWon++;
+      $('ritual-status').textContent = `The ritual is complete. +${reward} Power.`;
+      log(`The Ritual succeeds. The horror swells with ${reward} Power.`, 'evolve');
+      sfx('success');
+      flash();
+      checkAchievements();
+    } else {
+      applyEffects(CONFIG.ritual.failEffects);
+      $('ritual-status').textContent = 'The circle breaks! The horror is wounded.';
+      log('The Ritual fails. Something tears inside the horror.', 'bad');
+      sfx('fail');
+      flash(true);
+    }
+    $('ritual-close').style.display = '';
+    $('ritual-close').textContent = 'Close';
+    save();
+  }
+
+  /* ---------- Omens (choice events) ---------- */
+  const omenById = id => CONFIG.omens.find(o => o.id === id);
+  function meetsReq(req) {
+    if (!req) return '';
+    if (req.cultists && state.cultists.length < req.cultists) return `needs ${req.cultists}+ cultists`;
+    if (req.power && state.power < req.power) return `needs ${req.power} Power`;
+    if (req.space && freeSpace() < req.space) return 'the crypt is full';
+    if (req.offerings && state.offerings < req.offerings) return `needs ${req.offerings} offerings`;
+    return '';
+  }
+  function scheduleOmen() {
+    const c = CONFIG.choiceEvents;
+    state.nextChoiceAt = Date.now() + scaled(rand(c.minSeconds, c.maxSeconds));
+  }
+  function queueOmen() {
+    const pool = CONFIG.omens.filter(o => !state.recentOmens.includes(o.id) && !meetsReq(o.requires));
+    if (!pool.length) { state.recentOmens = []; scheduleOmen(); return; }
+    const o = pick(pool);
+    const rnd = state.cultists.length ? pick(state.cultists) : null;
+    const doubter = leastLoyal();
+    state.pendingOmen = { id: o.id, n: rnd ? rnd.name : null, d: doubter ? doubter.id : null, dn: doubter ? doubter.name : null };
+    state.recentOmens.push(o.id);
+    if (state.recentOmens.length > CONFIG.choiceEvents.noRepeat) state.recentOmens.shift();
+    log(CONFIG.text.omenArrives, 'evolve');
+    sfx('omen');
+  }
+  function hintFor(opt) {
+    const e = opt.effects || {};
+    const parts = [];
+    const lbl = { hunger: 'Hunger', devotion: 'Devotion', dread: 'Dread', power: 'Power', health: 'Vitality' };
+    for (const k in lbl) if (e[k]) parts.push((e[k] > 0 ? '+' : '−') + lbl[k]);
+    if (e.madness) parts.push('???');
+    if (e.cultists) parts.push((e.cultists > 0 ? '+' : '−') + Math.abs(e.cultists) + ' cultist' + (Math.abs(e.cultists) > 1 ? 's' : ''));
+    if (e.sacrificeOne || e.sacrificeTarget) parts.push('−1 cultist');
+    if (e.offerings) parts.push('+' + e.offerings + ' offering' + (e.offerings > 1 ? 's' : ''));
+    if (e.loyaltyAll) parts.push((e.loyaltyAll > 0 ? '+' : '−') + 'Loyalty');
+    if (e.loyaltyTarget) parts.push('+Loyalty');
+    if (opt.risk) parts.push('risky');
+    let s = parts.join(', ');
+    if (e.push) {
+      const top = Object.keys(e.push).sort((a, b) => e.push[b] - e.push[a])[0];
+      if (CONFIG.pathNames[top]) s += ` · <em>toward ${CONFIG.pathNames[top]}</em>`;
+    }
+    return s;
+  }
+  function omenVars() {
+    const p = state.pendingOmen;
+    const live = p.n && state.cultists.some(c => c.name === p.n) ? p.n : (state.cultists[0] && state.cultists[0].name);
+    return { n: live, d: p.dn };
+  }
+  function openOmen() {
+    if (!state.pendingOmen || state.dead) { sfx('error'); return; }
+    audio();
+    const o = omenById(state.pendingOmen.id);
+    if (!o) { state.pendingOmen = null; scheduleOmen(); return; }
+    const vars = omenVars();
+    $('ev-title').textContent = o.title;
+    $('ev-text').textContent = fill(o.text, vars);
+    const box = $('ev-choices');
+    box.innerHTML = '';
+    o.options.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.className = 'choice';
+      const why = meetsReq(opt.requires);
+      b.disabled = !!why;
+      b.innerHTML = `${escapeHtml(opt.label)}<small>${why ? '(' + why + ')' : hintFor(opt)}</small>`;
+      b.addEventListener('click', () => chooseOmen(i));
+      box.appendChild(b);
+    });
+    $('ev-later').textContent = 'Decide later';
+    showOverlay('event-ov');
+  }
+  function chooseOmen(i) {
+    const p = state.pendingOmen;
+    if (!p || state.dead) return;
+    const o = omenById(p.id);
+    const opt = o.options[i];
+    if (meetsReq(opt.requires)) return;
+    const vars = omenVars();
+    const ctx = { target: p.d != null ? cultistById(p.d) : null };
+    let text = fill(opt.result, vars);
+    applyEffects(opt.effects, ctx);
+    let bad = false;
+    if (opt.risk && Math.random() < opt.risk.chance) {
+      const victim = state.cultists.find(c => c.name === vars.n) || pick(state.cultists);
+      if (victim && opt.risk.effects.cultists < 0) { removeCultist(victim.id); state.stats.lost++; }
+      const rest = { ...opt.risk.effects }; delete rest.cultists;
+      applyEffects(rest, ctx);
+      text += ' ' + fill(opt.risk.result, { n: victim ? victim.name : vars.n });
+      bad = true;
+    }
+    state.pendingOmen = null;
+    scheduleOmen();
+    log(`${o.title}: ${text}`, bad ? 'bad' : 'horror');
+    sfx(bad ? 'bad' : 'complete');
+    checkAchievements();
+    $('ev-choices').innerHTML = `<p class="result-text">${escapeHtml(text)}</p>`;
+    $('ev-later').textContent = 'Close';
+    save();
+    render();
+  }
+
+  /* ---------- Dark Works ---------- */
+  const upgradeCost = k => CONFIG.upgrades[k].costs[state.upgrades[k]];
+  function buyUpgrade(k) {
+    const cost = upgradeCost(k);
+    if (cost == null || state.power < cost || state.dead) { sfx('error'); return; }
+    state.power -= cost;
+    state.upgrades[k]++;
+    const u = CONFIG.upgrades[k];
+    log(`Dark Works: ${u.label}${u.costs.length > 1 ? ' (level ' + state.upgrades[k] + ')' : ''} completed.`, 'evolve');
+    sfx('buy');
+    save();
+    render();
+  }
+
+  /* ---------- Achievements ---------- */
+  const ACHV_TEST = {
+    firstBlood: () => state.stats.sacrificed >= 1,
+    riteMaster: () => state.stats.ritualsWon >= 1,
+    metamorphosis: () => state.stage >= 2,
+  };
+  const toastQueue = [];
+  let toastBusy = false;
+  function checkAchievements() {
+    for (const k in CONFIG.achievements) {
+      if (!state.achievements[k] && ACHV_TEST[k] && ACHV_TEST[k]()) {
+        state.achievements[k] = Date.now();
+        toastQueue.push(k);
+        log(`Achievement unlocked: ${CONFIG.achievements[k].name}.`, 'evolve');
+      }
+    }
+    renderAchievements();
+    nextToast();
+  }
+  function nextToast() {
+    if (toastBusy || !toastQueue.length) return;
+    toastBusy = true;
+    const a = CONFIG.achievements[toastQueue.shift()];
+    $('toast-name').textContent = a.name;
+    $('toast-desc').textContent = a.desc;
+    $('toast').classList.add('show');
+    sfx('achieve');
+    setTimeout(() => {
+      $('toast').classList.remove('show');
+      setTimeout(() => { toastBusy = false; nextToast(); }, 500);
+    }, 3200);
+  }
+
+  /* ---------- Tutorial ---------- */
+  function advanceTutorial() {
+    state.tutorial++;
+    if (state.tutorial === 2 && state.offerings < 1) state.offerings = 1;
+    renderTutorial();
+  }
+  function finishTutorial() {
+    state.tutorial = TUT_DONE;
+    const now = Date.now();
+    state.ritualReadyAt = now + scaled(CONFIG.ritual.firstAfterTutorial);
+    state.nextChoiceAt = now + scaled(CONFIG.choiceEvents.firstAfterTutorial);
+    renderTutorial();
+    save();
+  }
+  function renderTutorial() {
+    document.querySelectorAll('.tut-target').forEach(e => e.classList.remove('tut-target'));
+    const box = $('tutorial');
+    const step = state.tutorial;
+    const T = CONFIG.tutorial;
+    if (step >= TUT_DONE || state.dead || !state.seenIntro) { box.classList.remove('show'); return; }
+    const beat = step < T.length ? T[step] : CONFIG.tutorialEnd;
+    $('tut-title').textContent = beat.title;
+    $('tut-text').textContent = beat.text;
+    $('tut-btn').style.display = step === T.length ? '' : 'none';
+    box.classList.add('show');
+    if (beat.target === 'creature') $('altar').classList.add('tut-target');
+    else if (beat.target) { const b = document.querySelector(`#actions button[data-action="${beat.target}"]`); if (b) b.classList.add('tut-target'); }
   }
 
   /* ---------- Evolution ---------- */
@@ -730,25 +1647,22 @@ const CONFIG = {
     if (tie && state.madness >= CONFIG.evolution.tieBreakMadness) return 'study';
     return best;
   }
-
-  function currentForm() { return CONFIG.forms[state.stage][state.path]; }
+  const currentForm = () => CONFIG.forms[state.stage][state.path];
 
   function checkGrowth(silent) {
     const next = CONFIG.stages[state.stage + 1];
-    if (!next || state.power < next.power) return;
+    if (!next || state.powerTotal < next.power) return;
     state.stage++;
     state.path = dominantPath();
     state.stageCounts = emptyCounts();
     const f = currentForm();
     log(`The horror splits its skin and rises anew as ${f.name}. ${f.desc}`, 'evolve');
-    if (!silent) {
-      const fl = $('flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
-      evolveAnim = true;
-    }
-    checkGrowth(silent); // in case enough power for two stages
+    if (!silent) { flash(); evolveAnim = true; sfx('evolve'); }
+    checkAchievements();
+    checkGrowth(silent);
   }
 
-  /* ---------- Horror events ---------- */
+  /* ---------- Horror flavour events ---------- */
   function horrorEvent() {
     const T = CONFIG.text;
     const n = state.needs;
@@ -774,7 +1688,7 @@ const CONFIG = {
   // dt is in real seconds. offline = catching up after an absence (gentler rules).
   function simulate(dt, offline, flight) {
     const g = dt * CONFIG.timeScale;
-    const N = CONFIG.neglect;
+    const N = CONFIG.neglect, C = CONFIG.cultists;
     const mods = CONFIG.pathMods[state.path] || {};
 
     NEEDS.forEach(k => {
@@ -792,9 +1706,11 @@ const CONFIG = {
         if (state.fleeTimer >= N.fleeEverySeconds) {
           state.fleeTimer = 0;
           if (state.cultists.length > 0 && (!offline || flight.lost < CONFIG.offline.maxCultistsLost)) {
-            const name = loseCultist();
+            const c = leastLoyal();
+            removeCultist(c.id);
+            state.stats.lost++;
             if (offline) flight.lost++;
-            if (name) log(fill(pick(CONFIG.text.flee), { n: name }), 'bad');
+            log(fill(pick(CONFIG.text.flee), { n: c.name }), 'bad');
           }
         }
       }
@@ -805,12 +1721,48 @@ const CONFIG = {
     }
     state.health = clamp(state.health, offline ? flight.healthFloor : 0, 100);
 
+    // loyalty slowly fades
+    state.cultists.forEach(c => {
+      const t = CONFIG.traits[c.trait];
+      const loss = C.loyaltyDecayPerMinute * (t.loyaltyDecay || 1) * (empty ? C.neglectDecayMult : 1) / 60 * g;
+      const floor = offline ? Math.min(flight.loyaltyFloor[c.id] || 0, CONFIG.offline.minLoyalty) : 0;
+      c.loyalty = Math.max(floor, c.loyalty - loss);
+    });
+
+    // offerings trickle back
+    if (state.offerings < offeringCap()) {
+      state.offeringTimer += g;
+      const regen = CONFIG.feed.regenSeconds * Math.pow(CONFIG.upgrades.satchel.regenMult, state.upgrades.satchel);
+      if (state.offeringTimer >= regen) { state.offeringTimer = 0; state.offerings++; }
+    } else state.offeringTimer = 0;
+
+    // disloyal cultists rebel (only while you are watching)
+    if (!offline) {
+      state.rebelTimer += g;
+      if (state.rebelTimer >= C.rebelCheckSeconds) {
+        state.rebelTimer = 0;
+        state.cultists.filter(c => c.loyalty < C.rebelBelow).forEach(c => {
+          if (Math.random() >= C.rebelChance) return;
+          if (Math.random() < C.stealChance && state.power >= 1) {
+            const p = Math.min(Math.floor(state.power), Math.round(rand(C.stealPower[0], C.stealPower[1])));
+            state.power -= p;
+            c.loyalty = Math.max(c.loyalty, C.rebelBelow + 5);
+            log(fill(pick(CONFIG.text.rebelSteal), { n: c.name, p }), 'bad');
+          } else {
+            removeCultist(c.id);
+            state.stats.lost++;
+            log(fill(pick(CONFIG.text.rebelFlee), { n: c.name }), 'bad');
+          }
+          sfx('bad');
+        });
+      }
+    }
+
     if (state.cultists.length === 0) {
       state.strayTimer += g;
       if (state.strayTimer >= CONFIG.strayArrivalSeconds) {
-        const r = randomName();
-        addCultist(r);
-        log(fill(CONFIG.text.stray, { r }), 'good');
+        const c = addCultist();
+        if (c) log(fill(CONFIG.text.stray, { r: `${c.name} the ${c.trait}` }), 'good');
       }
     }
   }
@@ -819,7 +1771,7 @@ const CONFIG = {
     const due = state.tasks.filter(t => t.endAt <= now).sort((a, b) => a.endAt - b.endAt);
     due.forEach(t => {
       const i = state.tasks.indexOf(t);
-      if (i === -1) return; // task removed by a flee earlier in this loop
+      if (i === -1) return;
       state.tasks.splice(i, 1);
       completeTask(t);
     });
@@ -827,9 +1779,9 @@ const CONFIG = {
 
   function catchUp(seconds) {
     const capped = Math.min(seconds, CONFIG.offline.maxSeconds);
-    const before = { ...state.needs, health: state.health, cultists: state.cultists.length };
-    // an absence never pushes vitality below the floor (or below where it already was)
-    const flight = { lost: 0, healthFloor: Math.min(state.health, CONFIG.offline.minHealth) };
+    const before = { ...state.needs };
+    const flight = { lost: 0, healthFloor: Math.min(state.health, CONFIG.offline.minHealth), loyaltyFloor: {} };
+    state.cultists.forEach(c => flight.loyaltyFloor[c.id] = c.loyalty);
     let left = capped;
     while (left > 0) {
       const step = Math.min(CONFIG.offline.stepSeconds, left);
@@ -842,38 +1794,48 @@ const CONFIG = {
     log(`You were away for ${fmtDuration(seconds)}${seconds > capped ? ' (only ' + fmtDuration(capped) + ' counted)' : ''}. ${parts.join(', ')}.`, '');
   }
 
-  function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+  const cap = s => s[0].toUpperCase() + s.slice(1);
 
   function die() {
     state.dead = true;
-    const f = currentForm();
-    log(`${f.name} lets out a final, rattling breath. The candles go out.`, 'bad');
+    state.pendingOmen = null;
+    log(`${currentForm().name} lets out a final, rattling breath. The candles go out.`, 'bad');
+    sfx('death');
+    ['event-ov', 'ritual-ov', 'cultist-ov'].forEach(closeOverlay);
     save();
     showGameOver();
   }
 
-  let lastUI = 0;
+  let lastSave = 0;
   function loop() {
     if (!state || state.dead) return;
     const now = Date.now();
     const dt = (now - state.lastTick) / 1000;
     state.lastTick = now;
     if (dt > 120) {
-      // the tab was asleep for a while: treat it like time away
       catchUp(dt);
     } else if (dt > 0) {
       simulate(dt, false);
       completeDueTasks(now);
+      const tutDone = state.tutorial >= TUT_DONE;
+      // the horror's own musings pause while an omen waits
       if (now >= state.nextEventAt) {
-        horrorEvent();
+        if (!state.pendingOmen) horrorEvent();
         const e = CONFIG.events;
-        state.nextEventAt = now + (e.minSeconds + Math.random() * (e.maxSeconds - e.minSeconds)) * 1000 / CONFIG.timeScale;
+        state.nextEventAt = now + scaled(rand(e.minSeconds, e.maxSeconds));
+      }
+      if (tutDone && !state.pendingOmen && state.nextChoiceAt != null && now >= state.nextChoiceAt) queueOmen();
+      if (tutDone && ritualReady() && !state.ritualAnnounced) {
+        state.ritualAnnounced = true;
+        log(CONFIG.text.ritualReady, 'evolve');
       }
       checkGrowth(false);
       if (state.health <= 0) { die(); render(); return; }
     }
+    // idle eyes wander when nobody is touching
+    if (now - lastLook > 3500 && Math.random() < .04) setLook(rand(-1, 1), rand(-.6, .8));
     render();
-    if (now - lastUI > 5000) { save(); lastUI = now; }
+    if (now - lastSave > 5000) { save(); lastSave = now; }
   }
 
   /* ---------- Creature drawing ---------- */
@@ -887,8 +1849,8 @@ const CONFIG = {
       : `<circle cx="${x}" cy="${y}" r="${(r * .45).toFixed(1)}" fill="#050203"/>`;
     return `<g class="eye" style="animation-delay:-${delay}s">
       <ellipse cx="${x}" cy="${y}" rx="${r}" ry="${(r * .82).toFixed(1)}" fill="#e9e1c4"/>
-      ${pupil}
-      <circle cx="${(x - r * .3).toFixed(1)}" cy="${(y - r * .3).toFixed(1)}" r="${(r * .15).toFixed(1)}" fill="#fff" opacity=".7"/>
+      <g class="pupil" style="--r:${(r * .38).toFixed(2)}">${pupil}
+      <circle cx="${(x - r * .3).toFixed(1)}" cy="${(y - r * .3).toFixed(1)}" r="${(r * .15).toFixed(1)}" fill="#fff" opacity=".7"/></g>
     </g>`;
   }
 
@@ -917,11 +1879,9 @@ const CONFIG = {
     const scale = [0.55, 0.72, 0.88, 1][st];
     const bodyFill = 'url(#bodyGrad)';
     const limbFill = pal.dark;
-    let back = '', body = '', front = '';
+    let back = '', body = '', front = '', runes = '';
 
-    // Elder aura
     if (st === 3) back += `<circle class="pulse" cx="0" cy="0" r="92" fill="url(#auraGrad)"/>`;
-    // Limbs for Abomination and Elder (study grows more tendrils later)
     if (st >= 2 && path !== 'study') {
       const n = st === 2 ? 2 : 4;
       for (let i = 0; i < n; i++) {
@@ -941,7 +1901,6 @@ const CONFIG = {
       const rx = 56 + st * 6, ry = 46 + st * 4;
       body += `<ellipse cx="0" cy="8" rx="${rx}" ry="${ry}" fill="${bodyFill}"/>`;
       body += `<ellipse cx="0" cy="${18 + st * 2}" rx="${rx * .6}" ry="${ry * .5}" fill="${pal.light}" opacity=".35"/>`;
-      // veins
       for (let i = 0; i < 2 + st; i++) {
         const x = (rng() - .5) * rx * 1.4, y = (rng() - .5) * ry;
         body += `<path d="M${x.toFixed(0)},${y.toFixed(0)} q${(rng() * 20 - 10).toFixed(0)},${(rng() * 14).toFixed(0)} ${(rng() * 30 - 15).toFixed(0)},${(rng() * 20).toFixed(0)}" stroke="${pal.accent}" stroke-opacity=".35" stroke-width="1.5" fill="none"/>`;
@@ -967,7 +1926,6 @@ const CONFIG = {
       }
       body += `<ellipse cx="0" cy="0" rx="${rx}" ry="${ry}" fill="${bodyFill}"/>`;
       const count = [0, 3, 6, 11][st];
-      // eyes in a golden-angle spiral
       for (let i = 0; i < count; i++) {
         const a = i * 2.39996, d = Math.sqrt((i + .5) / count) * Math.min(rx, ry) * .72;
         const r = (count > 6 ? 6 : 9) + rng() * 4 - (i / count) * 2;
@@ -975,7 +1933,6 @@ const CONFIG = {
       }
       body += `<path d="M-14,${ry * .55} Q0,${ry * .65} 14,${ry * .55}" stroke="#05030a" stroke-width="2" fill="none"/>`;
       if (st === 3) {
-        // floating lattice of eyes
         let ring = '';
         for (let i = 0; i < 6; i++) {
           const a = i / 6 * Math.PI * 2;
@@ -987,26 +1944,12 @@ const CONFIG = {
 
     else if (path === 'terrorise') {
       const rIn = 44 + st * 3, rOut = rIn + 12 + st * 7, n = 8 + st * 4;
-      let pts = [];
+      const pts = [];
       for (let i = 0; i < n * 2; i++) {
         const a = i * Math.PI / n - Math.PI / 2;
         const r = i % 2 ? rIn : rOut * (.85 + rng() * .3);
         pts.push(`${(Math.cos(a) * r).toFixed(1)},${(Math.sin(a) * r + 4).toFixed(1)}`);
       }
-      body += `<path d="M${pts.join(' L')} Z" fill="${pal.dark}" stroke="${pal.accent}" stroke-opacity=".3"/>`;
-      body += `<circle cx="0" cy="4" r="${rIn + 2}" fill="${bodyFill}"/>`;
-      if (st >= 2) {
-        const h = 22 + st * 8;
-        body += `<path d="M-22,${-rIn + 8} Q-40,${-rIn - h * .4} -30,${-rIn - h} Q-26,${-rIn - h * .3} -10,${-rIn + 4} Z" fill="#1a0e06" stroke="${pal.accent}" stroke-opacity=".4"/>`;
-        body += `<path d="M22,${-rIn + 8} Q40,${-rIn - h * .4} 30,${-rIn - h} Q26,${-rIn - h * .3} 10,${-rIn + 4} Z" fill="#1a0e06" stroke="${pal.accent}" stroke-opacity=".4"/>`;
-      }
-      // angry brows + slit eyes
-      body += `<path d="M-30,-14 L-8,-6" stroke="#0a0502" stroke-width="4"/><path d="M30,-14 L8,-6" stroke="#0a0502" stroke-width="4"/>`;
-      body += eye(rng, -18, 0, 8 + st, true) + eye(rng, 18, 0, 8 + st, true);
-      // jagged mouth
-      let m = 'M-22,22';
-      for (let i = 1; i <= 8; i++) m += ` L${-22 + i * 5.5},${22 + (i % 2 ? 6 : 0)}`;
-      body += `<path d="${m}" stroke="${pal.accent}" stroke-width="2" fill="none" opacity=".85"/>`;
       if (st === 3) {
         let crown = '';
         for (let i = 0; i < 7; i++) {
@@ -1015,6 +1958,18 @@ const CONFIG = {
         }
         back += `<path d="${crown}" fill="${pal.accent}" opacity=".8"/>`;
       }
+      body += `<path d="M${pts.join(' L')} Z" fill="${pal.dark}" stroke="${pal.accent}" stroke-opacity=".3"/>`;
+      body += `<circle cx="0" cy="4" r="${rIn + 2}" fill="${bodyFill}"/>`;
+      if (st >= 2) {
+        const h = 22 + st * 8;
+        body += `<path d="M-22,${-rIn + 8} Q-40,${-rIn - h * .4} -30,${-rIn - h} Q-26,${-rIn - h * .3} -10,${-rIn + 4} Z" fill="#1a0e06" stroke="${pal.accent}" stroke-opacity=".4"/>`;
+        body += `<path d="M22,${-rIn + 8} Q40,${-rIn - h * .4} 30,${-rIn - h} Q26,${-rIn - h * .3} 10,${-rIn + 4} Z" fill="#1a0e06" stroke="${pal.accent}" stroke-opacity=".4"/>`;
+      }
+      body += `<path d="M-30,-14 L-8,-6" stroke="#0a0502" stroke-width="4"/><path d="M30,-14 L8,-6" stroke="#0a0502" stroke-width="4"/>`;
+      body += eye(rng, -18, 0, 8 + st, true) + eye(rng, 18, 0, 8 + st, true);
+      let m = 'M-22,22';
+      for (let i = 1; i <= 8; i++) m += ` L${-22 + i * 5.5},${22 + (i % 2 ? 6 : 0)}`;
+      body += `<path d="${m}" stroke="${pal.accent}" stroke-width="2" fill="none" opacity=".85"/>`;
     }
 
     else if (path === 'devout') {
@@ -1029,18 +1984,17 @@ const CONFIG = {
       }
       if (st >= 2) {
         const glyphs = ['†', 'Ψ', 'Ω', 'Δ', '∞', 'Ϟ', 'ж', '☽'];
-        let runes = '';
+        let r = '';
         const n = st * 3;
         for (let i = 0; i < n; i++) {
           const a = i / n * Math.PI * 2;
-          runes += `<text x="${(100 + Math.cos(a) * 88).toFixed(1)}" y="${(112 + Math.sin(a) * 88).toFixed(1)}" fill="${pal.accent}" font-size="12" text-anchor="middle" opacity=".7">${glyphs[i % glyphs.length]}</text>`;
+          r += `<text x="${(100 + Math.cos(a) * 88).toFixed(1)}" y="${(112 + Math.sin(a) * 88).toFixed(1)}" fill="${pal.accent}" font-size="12" text-anchor="middle" opacity=".7">${glyphs[i % glyphs.length]}</text>`;
         }
         // runes are drawn in viewBox space so the spin pivots around the creature centre
-        runesLayer = `<g class="spin">${runes}</g>`;
+        runes = `<g class="spin">${r}</g>`;
       }
     }
 
-    // Larva ridges
     if (st === 1 && path !== 'devout') {
       for (let i = 0; i < 3; i++) {
         const y = -24 + i * 16, w = 40 - Math.abs(i - 1) * 6;
@@ -1071,13 +2025,61 @@ const CONFIG = {
         <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
       <ellipse cx="100" cy="182" rx="${50 * scale + 10}" ry="7" fill="#000" opacity=".55"/>
-      ${runesLayer}
-      <g transform="translate(100 ${120 - (1 - scale) * -30}) scale(${scale})">
+      ${runes}
+      <g transform="translate(100 ${120 + (1 - scale) * 30}) scale(${scale})">
         <g class="breathe">${back}<g filter="url(#glow)">${body}</g>${front}</g>
       </g>
     </svg>`;
   }
-  let runesLayer = '';
+
+  // The shrine around the altar grows with each stage.
+  let shrineKey = '';
+  function renderShrine() {
+    const st = state.stage;
+    const pal = CONFIG.palettes[state.path];
+    const key = st + '|' + state.path;
+    if (key === shrineKey) return;
+    shrineKey = key;
+    let svg = '';
+    if (st >= 3) { // a glow behind everything
+      svg += `<radialGradient id="shGlow"><stop offset="0%" stop-color="${pal.accent}" stop-opacity=".2"/><stop offset="100%" stop-color="${pal.accent}" stop-opacity="0"/></radialGradient>
+              <circle cx="100" cy="110" r="110" fill="url(#shGlow)"/>`;
+    }
+    if (st >= 1) { // chalk circle on the floor
+      svg += `<ellipse cx="100" cy="186" rx="92" ry="13" fill="none" stroke="#c9b9a6" stroke-opacity=".22" stroke-width="1"/>
+              <ellipse cx="100" cy="186" rx="80" ry="10" fill="none" stroke="#c9b9a6" stroke-opacity=".14" stroke-dasharray="3 4"/>`;
+    }
+    if (st >= 2) { // wall sigil and bone piles
+      const pts = [];
+      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * 4 * Math.PI / 5; pts.push(`${(100 + Math.cos(a) * 70).toFixed(1)},${(95 + Math.sin(a) * 70).toFixed(1)}`); }
+      svg += `<g opacity=".1"><circle cx="100" cy="95" r="74" fill="none" stroke="${pal.accent}" stroke-width="1.2"/><path d="M${pts.join(' L')} Z" fill="none" stroke="${pal.accent}" stroke-width="1.2"/></g>`;
+      [22, 178].forEach(x => {
+        const y = 188;
+        svg += `<g fill="#cfc4a8" opacity=".55"><ellipse cx="${x}" cy="${y}" rx="9" ry="3"/><circle cx="${x - 3}" cy="${y - 5}" r="4.5"/><circle cx="${x + 5}" cy="${y - 3}" r="3"/><rect x="${x - 12}" y="${y - 2}" width="24" height="2" rx="1"/></g>`;
+      });
+    }
+    if (st >= 3) { // pillars and floating motes
+      [4, 180].forEach(x => {
+        svg += `<rect x="${x}" y="40" width="16" height="152" fill="#151017" stroke="#2a2130"/><rect x="${x - 3}" y="34" width="22" height="8" fill="#1d161f"/><rect x="${x - 3}" y="188" width="22" height="6" fill="#1d161f"/>`;
+      });
+      for (let i = 0; i < 10; i++) {
+        svg += `<circle class="mote" style="animation-delay:-${(i * .7).toFixed(1)}s" cx="${20 + i * 17}" cy="${60 + (i * 37) % 100}" r="1.4" fill="${pal.accent}"/>`;
+      }
+    }
+    $('shrine').innerHTML = `<svg viewBox="0 0 200 200" preserveAspectRatio="none">${svg}</svg>`;
+    // candles: more of them, taller and stranger, per stage
+    const sets = [
+      [['6%', 6, 26, '']],
+      [['18%', 3, 18, '']],
+      [['1%', 18, 34, 'black'], ['27%', 1, 14, '']],
+      [['-4%', 30, 40, 'black green'], ['12%', 22, 22, 'green']],
+    ];
+    let html = '';
+    for (let i = 0; i <= st; i++) sets[i].forEach(([side, bottom, h, cls]) => {
+      html += `<div class="candle ${cls}" style="left:${side};bottom:${bottom}%;height:${h}px"></div><div class="candle ${cls}" style="right:${side};bottom:${bottom}%;height:${h}px"></div>`;
+    });
+    $('candles').innerHTML = html;
+  }
 
   function renderCreature() {
     const m = CONFIG.madness;
@@ -1086,7 +2088,6 @@ const CONFIG = {
     const el = $('creature');
     if (key !== creatureKey) {
       creatureKey = key;
-      runesLayer = '';
       el.innerHTML = buildCreature();
       el.className = (isWeak() || state.dead ? 'weak ' : '') + (madLevel >= 2 ? 'mad2 ' : '') + (madLevel >= 3 ? 'mad3' : '');
     }
@@ -1095,6 +2096,7 @@ const CONFIG = {
       const svg = el.querySelector('svg');
       svg.classList.remove('evolving'); void svg.offsetWidth; svg.classList.add('evolving');
     }
+    renderShrine();
   }
 
   /* ---------- UI ---------- */
@@ -1125,81 +2127,209 @@ const CONFIG = {
     const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
     if (d) return `${d}d ${h}h`;
     if (h) return `${h}h ${m}m`;
-    if (m) return `${m}m`;
+    if (m) return `${m}m ${s}s`;
     return `${s}s`;
   }
 
+  let dispGrowth = null;
   function render() {
     const s = state;
+    const now = Date.now();
     const f = currentForm();
     $('form-name').textContent = f.name;
     $('stage-name').textContent = `Stage ${ROMAN[s.stage]} · ${CONFIG.stages[s.stage].name}`;
-    $('creature').setAttribute('aria-label', `${f.name}. ${f.desc} Tap to touch it.`);
+    $('creature').setAttribute('aria-label', `${f.name}. ${f.desc} Tap to stroke it, hold to feed it.`);
     $('mood').textContent = moodText();
-    $('age').textContent = 'Age ' + fmtDuration((Date.now() - s.createdAt) / 1000);
+    $('age').textContent = 'Age ' + fmtDuration((now - s.createdAt) / 1000);
+    $('btn-sound').textContent = s.muted ? 'Sound: off' : 'Sound: on';
 
     NEEDS.forEach(k => setBar(k, s.needs[k]));
     setBar('health', s.health);
+    // the growth number counts up toward its target so gains feel smooth
+    if (dispGrowth == null || dispGrowth > s.powerTotal) dispGrowth = s.powerTotal;
+    dispGrowth += (s.powerTotal - dispGrowth) * .3;
+    if (s.powerTotal - dispGrowth < .5) dispGrowth = s.powerTotal;
     const cur = CONFIG.stages[s.stage], next = CONFIG.stages[s.stage + 1];
     if (next) {
-      setBar('power', s.power - cur.power, next.power - cur.power);
-      $('val-power').textContent = Math.floor(s.power);
-      $('power-label').textContent = `${Math.floor(s.power)} / ${next.power} to become ${next.name}`;
+      setBar('power', s.powerTotal - cur.power, next.power - cur.power);
+      $('power-label').innerHTML = `${Math.floor(dispGrowth)} / ${next.power} to become ${next.name} · <b>${Math.floor(s.power)} Power to spend</b>`;
     } else {
       setBar('power', 1, 1);
-      $('val-power').textContent = Math.floor(s.power);
-      $('power-label').textContent = 'Fully grown. Keep your god fed and feared.';
+      $('power-label').innerHTML = `Fully grown. Keep your god fed and feared. · <b>${Math.floor(s.power)} Power to spend</b>`;
     }
+    $('val-power').textContent = Math.floor(dispGrowth);
 
-    // cult
-    const idle = idleCount();
-    $('cult-count').textContent = `${s.cultists.length} cultist${s.cultists.length === 1 ? '' : 's'} · ${idle} idle`;
-    let icons = '';
-    for (let i = 0; i < s.cultists.length; i++) icons += `<span class="${i < idle ? '' : 'busy'}" title="cultist">♱</span>`;
-    $('cultist-icons').innerHTML = icons || '<span class="task-none">No one is left. The horror calls out into the night...</span>';
+    // interaction bar
+    const capO = offeringCap();
+    $('gems').textContent = '◆'.repeat(s.offerings) + '◇'.repeat(Math.max(0, capO - s.offerings));
+    const cd = Math.ceil((scaled(CONFIG.stroke.cooldown) - (now - s.lastStroke)) / 1000);
+    $('satchel-hint').textContent = (cd > 0 ? `Stroke in ${cd}s` : 'Tap to stroke') + ' · Hold to feed';
+    const tutDone = s.tutorial >= TUT_DONE;
+    const rReady = tutDone && ritualReady();
+    const rb = $('btn-ritual');
+    rb.classList.toggle('ready', rReady);
+    rb.disabled = !rReady;
+    $('ritual-sub').textContent = !tutDone || s.ritualReadyAt == null ? 'not yet' : rReady ? 'ready!' : `in ${fmtDuration((s.ritualReadyAt - now) / 1000)}`;
+    const ob = $('btn-omen');
+    ob.classList.toggle('ready', !!s.pendingOmen);
+    ob.disabled = !s.pendingOmen;
+    $('omen-badge').classList.toggle('show', !!s.pendingOmen);
+    $('omen-sub').textContent = s.pendingOmen ? 'awaits you' : 'quiet';
+    $('log-pin').classList.toggle('show', !!s.pendingOmen);
+    document.title = (s.pendingOmen ? '(!) ' : '') + 'The Hungering Dark';
 
-    const now = Date.now();
-    let tasksHtml = '';
-    s.tasks.slice().sort((a, b) => a.endAt - b.endAt).forEach(t => {
-      const a = CONFIG.actions[t.action];
-      const pct = clamp((now - t.startAt) / (t.endAt - t.startAt) * 100, 0, 100);
-      const left = Math.max(0, Math.ceil((t.endAt - now) / 1000));
-      tasksHtml += `<div class="task">${t.name} · ${a.label} <span style="float:right;color:var(--dim)">${left}s</span><div class="bar"><div style="width:${pct}%"></div></div></div>`;
-    });
-    $('tasks').innerHTML = tasksHtml || '<div class="task-none">Your cultists await your command.</div>';
+    renderCult(now);
 
-    // action buttons
+    // rite buttons (rebuilt when a new rite unlocks)
+    const unlockKey = Object.keys(CONFIG.actions).filter(actionUnlocked).join(',');
+    if (unlockKey !== actionsKey) buildActionButtons(unlockKey);
     document.querySelectorAll('#actions button').forEach(b => {
       const k = b.dataset.action;
-      b.disabled = !canDo(k);
+      const why = whyNot(k);
+      b.disabled = !!why;
       b.querySelector('.count').textContent = '×' + s.counts[k];
+      b.querySelector('.why').textContent = why;
+      b.querySelector('.dur').textContent = Math.round(actionDuration(k) * 10) / 10 + 's';
+    });
+
+    // Dark Works
+    $('shop-power').textContent = Math.floor(s.power) + ' Power';
+    document.querySelectorAll('#shop button').forEach(b => {
+      const k = b.dataset.up;
+      const u = CONFIG.upgrades[k];
+      const cost = upgradeCost(k);
+      b.classList.toggle('maxed', cost == null);
+      b.disabled = cost == null || s.power < cost || s.dead;
+      b.querySelector('.cost').textContent = cost == null ? (u.costs.length > 1 ? 'MAX' : 'OWNED') : cost + ' P';
+      b.querySelector('.lvl').textContent = u.costs.length > 1 ? ` (${s.upgrades[k]}/${u.costs.length})` : '';
     });
 
     renderCreature();
   }
 
+  // cultist chips are updated in place so their animations are not restarted
+  let openCultistId = null;
+  function renderCult(now) {
+    const s = state;
+    const wrap = $('cultists');
+    $('cult-count').textContent = `${s.cultists.length}/${cultistCap()} · ${idleCount()} idle`;
+    const keep = new Set();
+    s.cultists.forEach(c => {
+      const id = 'chip-' + c.id;
+      keep.add(id);
+      let el = document.getElementById(id);
+      if (!el) {
+        el = document.createElement('button');
+        el.className = 'chip'; el.id = id;
+        el.innerHTML = '<span class="ctrait"></span><span class="cname"></span><span class="loy"><i></i></span><span class="ctask"></span><span class="cprog"><i></i></span>';
+        el.addEventListener('click', () => showCultist(c.id));
+        wrap.appendChild(el);
+      }
+      const t = taskFor(c.id);
+      el.querySelector('.cname').textContent = c.name;
+      el.querySelector('.ctrait').textContent = c.trait;
+      el.querySelector('.loy i').style.width = c.loyalty + '%';
+      el.classList.toggle('disloyal', c.loyalty < CONFIG.cultists.rebelBelow);
+      el.classList.toggle('busy', !!t);
+      el.classList.toggle('idle', !t);
+      if (t) {
+        const left = Math.max(0, Math.ceil((t.endAt - now) / 1000));
+        el.querySelector('.ctask').textContent = `${CONFIG.actions[t.action].label} · ${left}s`;
+        el.querySelector('.cprog i').style.width = clamp((now - t.startAt) / (t.endAt - t.startAt) * 100, 0, 100) + '%';
+      } else {
+        el.querySelector('.ctask').textContent = 'Idle';
+        el.querySelector('.cprog i').style.width = '0%';
+      }
+    });
+    if (!s.cultists.length) keep.add('empty-cult');
+    [...wrap.children].forEach(el => { if (!keep.has(el.id)) el.remove(); });
+    if (!s.cultists.length && !$('empty-cult')) {
+      const p = document.createElement('div');
+      p.className = 'empty-cult'; p.id = 'empty-cult';
+      p.textContent = 'No one is left. The horror calls out into the night...';
+      wrap.appendChild(p);
+    }
+    if (openCultistId != null) fillCultist(openCultistId);
+  }
+  function pulseChip(id) {
+    const el = document.getElementById('chip-' + id);
+    if (!el) return;
+    el.classList.remove('done'); void el.offsetWidth; el.classList.add('done');
+  }
+  function showCultist(id) {
+    sfx('tap');
+    openCultistId = id;
+    fillCultist(id);
+    showOverlay('cultist-ov');
+  }
+  function fillCultist(id) {
+    const c = cultistById(id);
+    if (!c) return;
+    const tr = CONFIG.traits[c.trait];
+    const t = taskFor(id);
+    const good = Object.keys(tr.actionMult || {}).map(k => CONFIG.actions[k].label).join(', ');
+    const disloyal = c.loyalty < CONFIG.cultists.rebelBelow;
+    $('cu-name').textContent = c.name;
+    $('cu-body').innerHTML = `
+      <p style="margin-top:0"><strong>${c.trait}.</strong> ${tr.desc}</p>
+      <div class="stat-row"><span>Loyalty</span><span>${Math.round(c.loyalty)} / 100</span></div>
+      <div class="bar" style="margin:6px 0 8px"><div style="width:${c.loyalty}%;background:${disloyal ? '#d04848' : '#8aa86a'}"></div></div>
+      <div class="stat-row"><span>Gifted at</span><span>${good || 'nothing in particular'}</span></div>
+      <div class="stat-row"><span>Speed</span><span>${tr.speedMult ? Math.round(100 / tr.speedMult) + '%' : '100%'}</span></div>
+      <div class="stat-row"><span>Rites performed</span><span>${c.done}</span></div>
+      <div class="stat-row"><span>Now</span><span>${t ? CONFIG.actions[t.action].label + ' (' + Math.max(0, Math.ceil((t.endAt - Date.now()) / 1000)) + 's)' : 'Idle'}</span></div>
+      ${disloyal ? '<p style="color:#e2686b;font-size:.85rem">They mutter against you. Preach a Sermon before they steal or flee.</p>' : ''}`;
+  }
+
   function renderLog() {
-    const html = state.log.map(e => {
+    $('log').innerHTML = state.log.map(e => {
       const d = new Date(e.t);
       const t = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
       return `<p class="${e.kind}"><span class="t">${t}</span>${escapeHtml(e.text)}</p>`;
     }).join('');
-    $('log').innerHTML = html;
   }
-  function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-  function buildActionButtons() {
+  let actionsKey = '';
+  function buildActionButtons(key) {
+    actionsKey = key;
     const wrap = $('actions');
     wrap.innerHTML = '';
-    Object.keys(CONFIG.actions).forEach(k => {
+    key.split(',').forEach(k => {
       const a = CONFIG.actions[k];
       const b = document.createElement('button');
       b.dataset.action = k;
-      if (a.wide) b.className = 'wide';
-      b.innerHTML = `<span class="count"></span><span class="name">${a.label}</span><span class="desc">${a.desc} (${a.duration}s)</span>`;
+      b.innerHTML = `<span class="count"></span><span class="name">${a.label}</span><span class="desc">${a.desc} (<span class="dur"></span>)</span><span class="why"></span>`;
       b.addEventListener('click', () => startAction(k));
       wrap.appendChild(b);
     });
+    renderTutorial();
+  }
+  function buildShop() {
+    const wrap = $('shop');
+    wrap.innerHTML = '';
+    Object.keys(CONFIG.upgrades).forEach(k => {
+      const u = CONFIG.upgrades[k];
+      const b = document.createElement('button');
+      b.dataset.up = k;
+      b.innerHTML = `<span class="cost"></span><span class="name">${u.label}<span class="lvl"></span></span><span class="desc">${u.desc}</span>`;
+      b.addEventListener('click', () => buyUpgrade(k));
+      wrap.appendChild(b);
+    });
+  }
+  function renderAchievements() {
+    $('achv').innerHTML = Object.keys(CONFIG.achievements).map(k => {
+      const a = CONFIG.achievements[k];
+      const got = state.achievements[k];
+      return `<span class="${got ? 'got' : ''}" title="${escapeHtml(a.desc)}">${got ? '★ ' + a.name : '☆ ' + a.desc}</span>`;
+    }).join('');
+  }
+
+  function showOverlay(id) { $(id).classList.add('show'); }
+  function closeOverlay(id) {
+    $(id).classList.remove('show');
+    if (id === 'cultist-ov') openCultistId = null;
+    if (id === 'ritual-ov') ritual = null;
   }
 
   function showGameOver() {
@@ -1212,29 +2342,31 @@ const CONFIG = {
     $('gameover').classList.add('show');
   }
 
-  let lastPoke = 0;
-  function poke() {
-    if (state.dead) return;
-    const now = Date.now();
-    const svg = $('creature').querySelector('svg');
-    if (svg) { svg.classList.remove('twitch'); void svg.offsetWidth; svg.classList.add('twitch'); }
-    if (now - lastPoke < CONFIG.pokeCooldownSeconds * 1000) return;
-    lastPoke = now;
-    log(pick(CONFIG.text.poke), 'horror');
-  }
-
   function startNew() {
-    state = newState();
-    creatureKey = '';
-    log('Beneath the old chapel, an egg splits open. Your three faithful kneel before the Spawn.', 'evolve');
+    // achievements, sound and tutorial progress carry over to a new cult
+    const keep = state ? { seenIntro: state.seenIntro, muted: state.muted, achievements: state.achievements, tutorial: state.tutorial } : null;
+    newState();
+    creatureKey = ''; shrineKey = ''; dispGrowth = null;
+    $('cultists').innerHTML = '';
+    const names = state.cultists.map(c => `${c.name} the ${c.trait}`).join(', ');
+    log(`Beneath the old chapel, an egg splits open. Your faithful kneel before the Spawn: ${names}.`, 'evolve');
+    if (keep) {
+      state.seenIntro = keep.seenIntro;
+      state.muted = keep.muted;
+      state.achievements = keep.achievements || {};
+      if (keep.tutorial >= TUT_DONE) finishTutorial();
+    }
+    ['gameover', 'event-ov', 'ritual-ov', 'cultist-ov'].forEach(closeOverlay);
     save();
     renderLog();
+    renderAchievements();
+    renderTutorial();
     render();
   }
 
   /* ---------- Boot ---------- */
   function init() {
-    buildActionButtons();
+    buildShop();
     const loaded = load();
     if (loaded) {
       state = loaded;
@@ -1244,33 +2376,42 @@ const CONFIG = {
       renderLog();
       render();
       if (state.dead) showGameOver();
+      else checkAchievements();
     } else {
       startNew();
     }
-    if (!state.seenIntro) $('intro').classList.add('show');
+    renderAchievements();
+    if (!state.seenIntro) showOverlay('intro');
+    renderTutorial();
 
-    $('creature').addEventListener('click', poke);
-    $('btn-start').addEventListener('click', () => { $('intro').classList.remove('show'); state.seenIntro = true; save(); });
-    $('btn-help').addEventListener('click', () => $('intro').classList.add('show'));
+    const cr = $('creature');
+    cr.addEventListener('pointerdown', e => { e.preventDefault(); holdStart(e); });
+    cr.addEventListener('pointerup', () => holdEnd(false));
+    cr.addEventListener('pointerleave', () => holdEnd(true));
+    cr.addEventListener('pointercancel', () => holdEnd(true));
+    cr.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('pointermove', e => lookAt(e.clientX, e.clientY), { passive: true });
+
+    $('btn-start').addEventListener('click', () => { closeOverlay('intro'); state.seenIntro = true; audio(); save(); renderTutorial(); });
+    $('btn-help').addEventListener('click', () => showOverlay('intro'));
+    $('btn-sound').addEventListener('click', () => { state.muted = !state.muted; save(); render(); sfx('tap'); });
     $('btn-reset').addEventListener('click', () => {
-      if (confirm('Abandon this horror and start a new cult? All progress will be lost.')) {
-        const seen = state.seenIntro;
-        startNew();
-        state.seenIntro = seen;
-        $('gameover').classList.remove('show');
-        save();
-      }
+      if (confirm('Abandon this horror and start a new cult? All progress will be lost.')) startNew();
     });
-    $('btn-restart').addEventListener('click', () => {
-      startNew();
-      state.seenIntro = true;
-      $('gameover').classList.remove('show');
-      save();
-    });
+    $('btn-restart').addEventListener('click', startNew);
+    $('btn-ritual').addEventListener('click', openRitual);
+    $('ritual-go').addEventListener('click', beginRitual);
+    $('ritual-close').addEventListener('click', () => { closeOverlay('ritual-ov'); render(); });
+    $('btn-omen').addEventListener('click', openOmen);
+    $('log-pin').addEventListener('click', openOmen);
+    $('ev-later').addEventListener('click', () => closeOverlay('event-ov'));
+    $('cu-close').addEventListener('click', () => closeOverlay('cultist-ov'));
+    $('tut-btn').addEventListener('click', () => { sfx('tap'); finishTutorial(); });
+
     document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else loop(); });
     window.addEventListener('pagehide', save);
 
-    setInterval(loop, 500);
+    setInterval(loop, 250);
   }
 
   init();
